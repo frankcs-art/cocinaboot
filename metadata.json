@@ -1,0 +1,7 @@
+{
+  "name": "Blanquita IA",
+  "description": "Sistema inteligente de inventario y gestión de proveedores con IA, recordatorios automáticos y escaneo visual de productos.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
