@@ -9,6 +9,7 @@ const STORES = {
   USAGE_HISTORY: 'usageHistory',
   SUPPLIERS: 'suppliers',
   SETTINGS: 'settings',
+  PENDING_ACTIONS: 'pendingActions'
 };
 
 let db: IDBDatabase | null = null;
@@ -61,6 +62,14 @@ export const initDB = (): Promise<IDBDatabase> => {
       // Crear store de configuración
       if (!database.objectStoreNames.contains(STORES.SETTINGS)) {
         database.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
+      }
+
+      // Crear store de acciones pendientes (offline)
+      if (!database.objectStoreNames.contains(STORES.PENDING_ACTIONS)) {
+        database.createObjectStore(STORES.PENDING_ACTIONS, { 
+            keyPath: 'id',
+            autoIncrement: true 
+        });
       }
     };
   });
@@ -353,4 +362,42 @@ export const importDB = async (data: Record<string, unknown[]>): Promise<void> =
       transaction.oncomplete = () => resolve(null);
     });
   }
+};
+
+/**
+ * Sync Strategy
+ */
+export const queueAction = async (actionType: string, payload: any) => {
+    const database = await initDB();
+    const transaction = database.transaction([STORES.PENDING_ACTIONS], 'readwrite');
+    const store = transaction.objectStore(STORES.PENDING_ACTIONS);
+    
+    store.add({
+        actionType,
+        payload,
+        timestamp: new Date().toISOString()
+    });
+};
+
+export const syncPendingActions = async () => {
+    const database = await initDB();
+    const transaction = database.transaction([STORES.PENDING_ACTIONS], 'readwrite');
+    const store = transaction.objectStore(STORES.PENDING_ACTIONS);
+    
+    // Get all pending actions
+    const request = store.getAll();
+    
+    request.onsuccess = async () => {
+        const actions = request.result;
+        if (actions.length === 0) return;
+        
+        console.log(`🔄 Syncing ${actions.length} pending actions...`);
+        
+        // Mock sending to API
+        // await api.sync(actions);
+        
+        // Clear queue after "success"
+        store.clear();
+        console.log('✅ Sync complete');
+    };
 };

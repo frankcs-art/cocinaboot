@@ -1,8 +1,8 @@
-import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import { InventoryItem, UsageHistory } from "./types";
 
 export class GeminiService {
-  private static getClient() {
+  private static async getClient() {
+    const { GoogleGenAI } = await import("@google/genai");
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
@@ -12,7 +12,7 @@ export class GeminiService {
     history: {role: 'user' | 'model', text: string}[] = [],
     useThinking: boolean = false
   ): Promise<string> {
-    const ai = this.getClient();
+    const ai = await this.getClient();
     const model = 'gemini-3-pro-preview';
     
     const inventoryContext = `Inventario Actual: ${JSON.stringify(inventory)}`;
@@ -55,7 +55,7 @@ Contexto del inventario: ${inventoryContext}`;
   }
 
   static async suggestDailyOrders(inventory: InventoryItem[], consumptionHistory: UsageHistory[]): Promise<string> {
-    const ai = this.getClient();
+    const ai = await this.getClient();
     const model = 'gemini-3-pro-preview';
     
     const prompt = `Analiza los siguientes datos operativos:
@@ -89,7 +89,7 @@ Contexto del inventario: ${inventoryContext}`;
   }
 
   static async analyzeKitchenImage(base64Image: string, mimeType: string): Promise<string> {
-    const ai = this.getClient();
+    const ai = await this.getClient();
     const model = 'gemini-3-pro-preview';
     
     const prompt = `Actúa como un escáner inteligente OCR para cocinas. Extrae:

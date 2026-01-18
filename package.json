@@ -6,15 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "@google/genai": "^1.35.0",
+    "compression": "^1.8.1",
+    "express": "^5.2.1",
     "firebase": "^12.8.0",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "recharts": "^3.6.0"
+    "recharts": "^3.6.0",
+    "spdy": "^4.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
@@ -22,6 +26,7 @@
     "ts-node": "^10.9.2",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
+    "vite-plugin-compression": "^0.5.1",
     "vite-plugin-pwa": "^1.2.0"
   }
 }
