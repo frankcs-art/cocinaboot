@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
         }),
         VitePWA({
           registerType: 'autoUpdate',
+          injectRegister: null, 
           workbox: {
             globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
             runtimeCaching: [
