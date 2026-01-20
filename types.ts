@@ -6,16 +6,26 @@ export enum OrderStatus {
   CANCELLED = 'CANCELLED'
 }
 
+export type UnitType = 'KG' | 'L' | 'PZ';
+
+export interface InventoryBatch {
+  entryDate: string;
+  quantity: number;
+}
+
 export interface InventoryItem {
   id: string;
   name: string;
   category: string;
   quantity: number;
-  unit: string;
+  unit: UnitType;
   minThreshold: number;
   expiryDate?: string;
   lastUpdated: string;
   pricePerUnit: number;
+  batchInfo?: InventoryBatch[];
+  location: string;
+  isPerishable: boolean;
 }
 
 export interface UsageHistory {
@@ -24,7 +34,8 @@ export interface UsageHistory {
   itemName: string;
   date: string;
   quantityConsumed: number;
-  unit: string;
+  unit: UnitType;
+  type: 'Consumo' | 'Merma';
 }
 
 export interface Supplier {
