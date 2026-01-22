@@ -3,7 +3,7 @@ import { InventoryItem, UsageHistory } from "./types";
 export class GeminiService {
   private static async getClient() {
     const { GoogleGenAI } = await import("@google/genai");
-    return new GoogleGenAI({ apiKey: process.env.API_KEY });
+    return new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string });
   }
 
   static async chatWithInventory(

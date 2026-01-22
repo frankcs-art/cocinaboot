@@ -4,6 +4,8 @@ import { ChefHat, LayoutDashboard, Package, Truck, MessageSquare, Camera, Histor
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  user?: { displayName: string | null; photoURL: string | null; email: string | null };
+  onLogout?: () => void;
 }
 
 const NavItem: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
@@ -16,7 +18,7 @@ const NavItem: React.FC<{ active: boolean; onClick: () => void; icon: React.Reac
   </button>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, user, onLogout }) => {
   return (
     <>
       <div className="p-6 md:p-8">
@@ -47,12 +49,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
 
       <div className="p-4 md:p-6 m-4 bg-white/5 rounded-3xl border border-white/5 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-500 flex items-center justify-center font-bold text-white shadow-lg shrink-0">JD</div>
+          {user?.photoURL ? (
+             <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-xl" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-500 flex items-center justify-center font-bold text-white shadow-lg shrink-0">
+              {user?.displayName ? user.displayName[0].toUpperCase() : 'U'}
+            </div>
+          )}
           <div className="flex-1 overflow-hidden">
-            <p className="font-bold text-slate-100 text-sm truncate">Chef Karen A.</p>
-            <p className="text-slate-500 text-xs truncate">Administrador</p>
+            <p className="font-bold text-slate-100 text-sm truncate">{user?.displayName || 'Usuario'}</p>
+            <p className="text-slate-500 text-[10px] truncate uppercase tracking-tight">{user?.email ? 'Administrador' : 'Invitado'}</p>
           </div>
-          <button className="text-slate-600 hover:text-purple-400 transition-colors p-1"><LogOut size={16} /></button>
+          <button 
+            onClick={onLogout}
+            className="text-slate-600 hover:text-rose-400 transition-colors p-1"
+            title="Cerrar sesión"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </>

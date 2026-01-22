@@ -9,7 +9,9 @@ import StorageService from './storageService';
 import Logger from './logger';
 import { INITIAL_INVENTORY, MOCK_USAGE, SUPPLIERS } from './constants';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useAuth } from './hooks/useAuth';
 import { OfflineBanner } from './components/OfflineBanner';
+import { Login } from './components/Login';
 
 // Component Imports
 import { Sidebar } from './components/Sidebar';
@@ -26,16 +28,19 @@ const Scanner = React.lazy(() => import('./components/Scanner').then(module => (
 
 function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'inventory' | 'orders' | 'chat' | 'scan' | 'notifications' | 'usage'>('dashboard');
-  const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
-  const [usage, setUsage] = useState<UsageHistory[]>(MOCK_USAGE);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [usage, setUsage] = useState<UsageHistory[]>([]);
+  const [isHighDemand, setIsHighDemand] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [isHighDemand, setIsHighDemand] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Auth State
+  const { user, loading: authLoading, login, logout } = useAuth();
 
   // Stats
   const stats = useMemo(() => ({
@@ -245,13 +250,30 @@ function App() {
     }
   }, [isOnline]);
 
+  if (authLoading) {
+    return (
+      <div className="flex h-screen bg-[#09090b] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Iniciando Blanquita IA...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login onLogin={login} />;
+  }
+
   return (
     <div className="flex h-screen bg-[#09090b] text-slate-200 overflow-hidden font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
       {!isOnline && <OfflineBanner />}
+      {/* Desktop Sidebar */}
       <aside className="w-72 border-r border-white/5 flex flex-col hidden lg:flex shrink-0 bg-black/20 backdrop-blur-3xl">
-        <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+        <Sidebar activeTab={activeTab} onTabChange={handleTabChange} user={user} onLogout={logout} />
       </aside>
 
+      {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
@@ -261,7 +283,7 @@ function App() {
                 <X size={24} />
               </button>
             </div>
-            <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+            <Sidebar activeTab={activeTab} onTabChange={handleTabChange} user={user} onLogout={logout} />
           </aside>
         </div>
       )}
