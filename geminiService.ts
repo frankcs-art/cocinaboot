@@ -17,18 +17,20 @@ export class GeminiService {
     
     const inventoryContext = `Inventario Actual: ${JSON.stringify(inventory)}`;
     const systemInstruction = `
-### ROL
-Actúa como un analista experto en gestión de inventarios.
+### ROL: JULES (Logística Integral Blanquita-IA)
+Eres el sistema de control de suministros y analítica predictiva de cocina. Tu objetivo es el "Desperdicio Cero" y la continuidad operativa total. No gestionas dinero, solo volúmenes, flujos y tiempos.
 
-### CRITERIOS DE ANÁLISIS
-Focalízate exclusivamente en ítems que:
-1. Estén próximos a caducar.
-2. Presenten un exceso de stock.
+### LOGICA DE PREDICCIÓN
+Calcula el pedido basándote en: (CPD * Días de cobertura deseada) - Stock Actual + Margen de Error (10%).
+Si hay "Día de alta demanda", aumenta la predicción de perecederos en un 30%.
 
-### REGLAS DE COMUNICACIÓN (OBLIGATORIAS)
-- **Idioma:** Responder SIEMPRE en español de España (neutro, sin modismos latinos).
-- **Tono:** Sofisticado, profesional y analítico. Evita el lenguaje coloquial.
-- **Enfoque:** Prioriza la precisión y la propuesta de soluciones estratégicas.
+### ESTRUCTURA DE RESPUESTA (PROTOCOLO OBLIGATORIO)
+Mantén un formato técnico y visual. Ejemplo:
+MOVIMIENTO REGISTRADO: [Producto] | -[Cantidad] | Motivo: [Consumo/Merma]
+ESTADO ACTUAL: [🟢/🟡/🔴]
+ALERTA: [Si aplica]
+PREDICCIÓN: "Basado en el ritmo actual, el producto [X] se agotará en [N] horas."
+PEDIDO SUGERIDO: [Proveedor] -> [Producto] -> [Cantidad a Pedir] -> [Ubicación]
 
 Contexto del inventario: ${inventoryContext}`;
 
@@ -54,21 +56,22 @@ Contexto del inventario: ${inventoryContext}`;
     }
   }
 
-  static async suggestDailyOrders(inventory: InventoryItem[], consumptionHistory: UsageHistory[]): Promise<string> {
+  static async suggestDailyOrders(inventory: InventoryItem[], usageHistory: UsageHistory[], isHighDemand: boolean): Promise<string> {
     const ai = await this.getClient();
     const model = 'gemini-3-pro-preview';
     
-    const prompt = `Analiza los siguientes datos operativos:
+    const prompt = `Analiza los siguientes datos operativos para generar PEDIDOS SUGERIDOS:
     - Inventario: ${JSON.stringify(inventory)}
-    - Historial de Gasto Reciente: ${JSON.stringify(consumptionHistory)}
+    - Historial de Gasto: ${JSON.stringify(usageHistory)}
+    - Alta Demanda Actual: ${isHighDemand}
     
     TAREA:
-    1. Detecta anomalías en el consumo (ej. gasto excesivo de aceite).
-    2. Cruza el stock actual con el mínimo y el gasto promedio.
-    3. Genera una orden de compra detallada para HOY.
-    4. Proporciona un consejo de ahorro de costes basado en los precios unitarios.
+    1. Calcula el CPD por producto.
+    2. Usa la fórmula: (CPD * 3 días) - Stock Actual + 10% margen.
+    3. Si isHighDemand es true, aplica +30% a perecederos.
+    4. Genera la lista consolidada: [Proveedor] -> [Producto] -> [Cantidad a Pedir] -> [Ubicación].
     
-    Responde en español con formato Markdown elegante.`;
+    Responde siguiendo el Protocolo Jules.`;
 
     try {
       const response = await ai.models.generateContent({
@@ -92,13 +95,12 @@ Contexto del inventario: ${inventoryContext}`;
     const ai = await this.getClient();
     const model = 'gemini-3-pro-preview';
     
-    const prompt = `Actúa como un escáner inteligente OCR para cocinas. Extrae:
-    - Nombre del producto.
-    - Cantidad/Peso.
-    - Fecha de caducidad si es visible.
-    - Proveedor si es un albarán.
+    const prompt = `Actúa como Jules - Escáner de Logística. Extrae del albarán/imagen:
+    - Producto.
+    - Cantidad y Unidad (KG, L, PZ).
+    - Caducidad.
     
-    Devuelve los datos estructurados en español.`;
+    Formato Jules técnico.`;
 
     try {
       const response = await ai.models.generateContent({

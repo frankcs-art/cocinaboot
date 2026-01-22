@@ -33,6 +33,7 @@ function App() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [isHighDemand, setIsHighDemand] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -43,19 +44,58 @@ function App() {
     unreadNotifications: notifications.filter(n => !n.isRead).length
   }), [inventory, notifications]);
 
-  // Sync notifications with inventory
+  // Sync notifications with inventory (Coverage Alerts + Min Threshold)
   useEffect(() => {
     const alerts: AppNotification[] = [];
+
     inventory.forEach(item => {
+      // 1. Min Threshold Check
       if (item.quantity <= item.minThreshold) {
         alerts.push({
-          id: `alert-${item.id}`,
+          id: `alert-min-${item.id}-${new Date().toDateString()}`,
           type: 'critical',
-          title: 'Stock Crítico',
-          message: `El producto ${item.name} ha alcanzado el umbral mínimo (${item.quantity} ${item.unit} restantes).`,
+          title: 'Stock Crítico (Mínimo)',
+          message: `El producto ${item.name} está por debajo del mínimo de seguridad (${item.quantity} ${item.unit} restantes).`,
           timestamp: new Date().toISOString(),
           isRead: false
         });
+      }
+
+      // 2. Time Coverage Check (CPD Based)
+      const itemUsage = usage.filter(u => u.itemId === item.id && u.type === 'Consumo');
+      if (itemUsage.length > 0) {
+        const uniqueDays = new Set(itemUsage.map(u => u.date)).size;
+        const totalConsumed = itemUsage.reduce((acc, u) => acc + u.quantityConsumed, 0);
+        let cpd = uniqueDays > 0 ? totalConsumed / uniqueDays : totalConsumed;
+
+        // Ajuste de Eventos: +30% CPD para perecederos en Alta Demanda
+        if (isHighDemand && item.isPerishable) {
+          cpd = cpd * 1.3;
+        }
+
+        if (cpd > 0) {
+          const coverageHours = (item.quantity / cpd) * 24;
+
+          if (coverageHours < 12) {
+            alerts.push({
+              id: `alert-critical-time-${item.id}`,
+              type: 'critical',
+              title: '🔴 CRÍTICO: <12h',
+              message: `El producto ${item.name} se agotará en menos de 12 horas (${coverageHours.toFixed(1)}h).`,
+              timestamp: new Date().toISOString(),
+              isRead: false
+            });
+          } else if (coverageHours < 48) {
+            alerts.push({
+              id: `alert-warning-time-${item.id}`,
+              type: 'warning',
+              title: '🟡 REABASTECER: <48h',
+              message: `Stock de ${item.name} cubre menos de 48 horas (${(coverageHours/24).toFixed(1)}d).`,
+              timestamp: new Date().toISOString(),
+              isRead: false
+            });
+          }
+        }
       }
     });
     setNotifications(prev => {
@@ -63,7 +103,7 @@ function App() {
       const newAlerts = alerts.filter(a => !existingIds.has(a.id));
       return [...newAlerts, ...prev];
     });
-  }, [inventory]);
+  }, [inventory, isHighDemand, usage]);
 
   // Al cargar la app
   useEffect(() => {
@@ -100,39 +140,67 @@ function App() {
     }
   }, [chatMessages]);
 
-  const recordUsage = (itemId: string, quantity: number) => {
+  const recordUsage = (itemId: string, quantity: number, type: 'Consumo' | 'Merma' = 'Consumo') => {
     const item = inventory.find(i => i.id === itemId);
     if (!item || quantity <= 0) {
       console.warn('⚠️ Invalid usage record:', { itemId, quantity });
       return;
     }
 
-    setInventory(prev => prev.map(i => i.id === itemId ? { ...i, quantity: Math.max(0, i.quantity - quantity), lastUpdated: new Date().toISOString() } : i
-    ));
+    setInventory(prev => prev.map(i => {
+      if (i.id !== itemId) return i;
+
+      let remainingToConsume = quantity;
+      const sortedBatches = [...(i.batchInfo || [])].sort((a, b) => new Date(a.entryDate).getTime() - new Date(b.entryDate).getTime());
+
+      const newBatches = sortedBatches.map(batch => {
+        if (remainingToConsume <= 0) return batch;
+        const consumeFromThisBatch = Math.min(batch.quantity, remainingToConsume);
+        remainingToConsume -= consumeFromThisBatch;
+        return { ...batch, quantity: batch.quantity - consumeFromThisBatch };
+      }).filter(batch => batch.quantity > 0);
+
+      return {
+        ...i,
+        quantity: Math.max(0, i.quantity - quantity),
+        lastUpdated: new Date().toISOString(),
+        batchInfo: newBatches
+      };
+    }));
 
     const newEntry: UsageHistory = {
       id: Math.random().toString(36).substr(2, 9),
       itemId,
       itemName: item.name,
-      date: new Date().toISOString().split('T')[0], // ISO date format YYYY-MM-DD
+      date: new Date().toISOString().split('T')[0],
       quantityConsumed: quantity,
-      unit: item.unit
+      unit: item.unit as any,
+      type
     };
     setUsage(prev => [newEntry, ...prev]);
     StorageService.recordUsage(newEntry);
-    console.log('✅ Usage recorded:', newEntry);
+  };
+
+  const addStock = (itemId: string, quantity: number, location?: string) => {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item || quantity <= 0) return;
+
+    setInventory(prev => prev.map(i => i.id === itemId ? {
+      ...i,
+      quantity: i.quantity + quantity,
+      location: location || i.location,
+      lastUpdated: new Date().toISOString(),
+      batchInfo: [...(i.batchInfo || []), { entryDate: new Date().toISOString(), quantity }]
+    } : i));
   };
 
   const getDailySuggestion = async () => {
     setIsLoading(true);
-    Logger.info('Generating daily suggestion...');
     try {
-      const res = await GeminiService.suggestDailyOrders(inventory, usage);
+      const res = await GeminiService.suggestDailyOrders(inventory, usage, isHighDemand);
       setAiSuggestion(res);
       setActiveTab('orders');
-      Logger.success('Suggestion generated');
     } catch (error) {
-      Logger.error('Error generating suggestion', error);
       setAiSuggestion("Error al generar la orden. Inténtalo de nuevo.");
       setActiveTab('orders');
     } finally {
@@ -142,15 +210,12 @@ function App() {
 
   const onChatSend = async (msg: string) => {
     if (!msg.trim()) return;
-    Logger.info('User message', msg);
     setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
     setIsLoading(true);
     try {
       const res = await GeminiService.chatWithInventory(msg, inventory, chatMessages, isThinking);
       setChatMessages(prev => [...prev, { role: 'model', text: res }]);
-      Logger.success('AI response received');
     } catch (error) {
-      Logger.error('Error in chat', error);
       setChatMessages(prev => [...prev, { role: 'model', text: "Error al procesar la consulta. Inténtalo de nuevo." }]);
     } finally {
       setIsLoading(false);
@@ -169,7 +234,6 @@ function App() {
   const handleVoiceCommand = (command: string, transcript: string) => {
     if (command) {
       setActiveTab(command as any);
-      Logger.success('Voice command executed', { command, transcript });
     }
   };
 
@@ -184,12 +248,10 @@ function App() {
   return (
     <div className="flex h-screen bg-[#09090b] text-slate-200 overflow-hidden font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
       {!isOnline && <OfflineBanner />}
-      {/* Desktop Sidebar */}
       <aside className="w-72 border-r border-white/5 flex flex-col hidden lg:flex shrink-0 bg-black/20 backdrop-blur-3xl">
         <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
@@ -204,9 +266,7 @@ function App() {
         </div>
       )}
 
-      {/* Main Container */}
       <main className="flex-1 flex flex-col bg-[#09090b] overflow-hidden relative">
-        {/* Header */}
         <header className="h-16 md:h-20 bg-black/40 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4 md:px-10 sticky top-0 z-30">
           <div className="flex items-center gap-2 md:gap-6">
             <button
@@ -239,25 +299,17 @@ function App() {
                 </span>
               )}
             </button>
-            <button 
-              onClick={() => StorageService.printFullDebugInfo()}
-              className="p-2.5 md:p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-purple-400 transition-all sm:flex hidden"
-              title="Debug Info"
-            >
-              <Settings size={20} />
-            </button>
           </div>
         </header>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 space-y-6 md:space-y-10 custom-scrollbar">
           <React.Suspense fallback={
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
             </div>
           }>
-            {activeTab === 'dashboard' && <Dashboard stats={stats} inventory={inventory} getDailySuggestion={getDailySuggestion} isLoading={isLoading} setTab={handleTabChange} />}
-            {activeTab === 'inventory' && <Inventory inventory={inventory} searchTerm={searchTerm} onRecordUsage={recordUsage} />}
+            {activeTab === 'dashboard' && <Dashboard stats={stats} inventory={inventory} getDailySuggestion={getDailySuggestion} isLoading={isLoading} setTab={handleTabChange} isHighDemand={isHighDemand} setIsHighDemand={setIsHighDemand} />}
+            {activeTab === 'inventory' && <Inventory inventory={inventory} usageHistory={usage} searchTerm={searchTerm} onRecordUsage={recordUsage} onAddStock={addStock} isHighDemand={isHighDemand} />}
             {activeTab === 'orders' && <Orders suppliers={SUPPLIERS} suggestion={aiSuggestion} onClearSuggestion={() => setAiSuggestion(null)} getDailySuggestion={getDailySuggestion} isLoading={isLoading} />}
             {activeTab === 'chat' && <Chat messages={chatMessages} onSend={onChatSend} isLoading={isLoading} isThinking={isThinking} setIsThinking={setIsThinking} />}
             {activeTab === 'scan' && <Scanner />}
