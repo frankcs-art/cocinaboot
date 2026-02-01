@@ -116,23 +116,27 @@ function App() {
       await StorageService.init();
       const savedData = await StorageService.loadInventoryData();
       if (savedData.length > 0) {
-        // Migración: Asegurar que los items tengan sus imágenes si están definidas en INITIAL_INVENTORY
+        // Migración y Sincronización: SIEMPRE actualizar las imágenes desde constants
+        // esto corrige el problema de imágenes rotas o desactualizadas en DB
         const migratedData = savedData.map(item => {
-          if (!item.image) {
-            const initialItem = INITIAL_INVENTORY.find(ii => ii.id === item.id);
-            if (initialItem?.image) {
-              return { ...item, image: initialItem.image };
-            }
+          const initialItem = INITIAL_INVENTORY.find(ii => ii.id === item.id);
+          if (initialItem?.image) {
+            return { ...item, image: initialItem.image };
           }
           return item;
-        });
+        }).filter(item => item.image); // FILTRO: Solo mostrar items con imagen
+        
         setInventory(migratedData);
-        Logger.success('Loaded inventory from DB', { items: savedData.length });
+        Logger.success('Loaded inventory from DB', { items: savedData.length, filtered: migratedData.length });
+        
+        // Guardar la versión corregida inmediatamente para persistir el arreglo
+        StorageService.saveInventoryData(migratedData);
       } else {
-        // Cargar inventario inicial si está vacío
-        setInventory(INITIAL_INVENTORY);
-        await StorageService.saveInventoryData(INITIAL_INVENTORY);
-        Logger.info('Seeded initial inventory');
+        // Cargar inventario inicial si está vacío (filtrando también por si acaso)
+        const initialFiltered = INITIAL_INVENTORY.filter(i => i.image);
+        setInventory(initialFiltered);
+        await StorageService.saveInventoryData(initialFiltered);
+        Logger.info('Seeded initial inventory', { count: initialFiltered.length });
       }
       const savedChat = StorageService.loadChatMessages();
       if (savedChat.length > 0) {
