@@ -21,8 +21,19 @@ export function useAuth() {
 
   const handleLogin = async () => {
     try {
-      await signInWithGoogle();
-      Logger.success('Login successful');
+      const result = await signInWithGoogle();
+      if (result && !result.user && (result as any).email) {
+          // This is our mock user
+          const mockUser = {
+              email: (result as any).email,
+              displayName: (result as any).displayName,
+              uid: 'mock-123'
+          } as any;
+          setUser(mockUser);
+          Logger.success('Mock login successful');
+      } else {
+        Logger.success('Login successful');
+      }
     } catch (error) {
       Logger.error('Login failed', error);
       throw error;

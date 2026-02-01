@@ -33,6 +33,11 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading }) => {
             <p className="text-slate-500 text-sm leading-relaxed">
               Inicia sesión para gestionar tu inventario con el poder de la inteligencia artificial.
             </p>
+            {window.location.hostname === 'localhost' && !import.meta.env.VITE_FIREBASE_API_KEY && (
+              <p className="text-amber-500/80 text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 py-2 rounded-xl border border-amber-500/20">
+                ⚠️ Modo de Prueba Activo (Sin Firebase)
+              </p>
+            )}
           </div>
 
           <button
