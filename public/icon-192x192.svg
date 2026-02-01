@@ -1,4 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
-  <rect width="192" height="192" fill="#ffffff"/>
-  <text x="96" y="96" font-family="Arial" font-size="24" fill="#000000" text-anchor="middle" dy=".3em">IA</text>
+  <defs>
+    <radialGradient id="bg-sm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#020617;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <rect width="192" height="192" rx="44" fill="url(#bg-sm)"/>
+  <g transform="translate(96, 85)">
+    <!-- Base -->
+    <path d="M-30,25 L30,25 L30,50 C30,55 25,60 20,60 L-20,60 C-25,60 -30,55 -30,50 Z" fill="#ffffff" />
+    <!-- Top -->
+    <path d="M0,-50 C35,-50 50,-20 35,0 C50,0 50,25 35,25 L-35,25 C-50,25 -50,0 -35,0 C-50,-20 -35,-50 0,-50 Z" fill="#ffffff" />
+    <!-- Emerald line -->
+    <path d="M-30,35 L30,35" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  </g>
 </svg>

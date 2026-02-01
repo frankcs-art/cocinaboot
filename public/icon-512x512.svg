@@ -1,4 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" fill="#ffffff"/>
-  <text x="256" y="256" font-family="Arial" font-size="64" fill="#000000" text-anchor="middle" dy=".3em">IA</text>
+  <defs>
+    <!-- Deep premium background -->
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#020617;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Glassmorphic effect for the hat -->
+    <linearGradient id="hat-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255, 255, 255, 0.95)" />
+      <stop offset="100%" style="stop-color:rgba(226, 232, 240, 0.9)" />
+    </linearGradient>
+
+    <!-- Emerald Accent Shadow -->
+    <filter id="emerald-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="15" stdDeviation="20" flood-color="#10B981" flood-opacity="0.25"/>
+    </filter>
+    
+    <!-- Glossy reflection -->
+    <linearGradient id="gloss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:white;stop-opacity:0.6" />
+      <stop offset="40%" style="stop-color:white;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Container (Rounded Square) -->
+  <rect width="512" height="512" rx="128" fill="url(#bg-grad)"/>
+  
+  <!-- The New "Model": Minimalist, Bold Chef Hat -->
+  <g transform="translate(256, 240)" filter="url(#emerald-shadow)">
+    <!-- Main Hat Silhouette -->
+    <!-- Base -->
+    <path d="M-85,60 L85,60 L85,120 C85,135 75,145 60,145 L-60,145 C-75,145 -85,135 -85,120 Z" fill="url(#hat-fill)" />
+    
+    <!-- Top (Simplified, clean curves) -->
+    <path d="M0,-140 C100,-140 140,-60 100,-20 C140,-20 140,60 100,60 L-100,60 C-140,60 -140,-20 -100,-20 C-140,-60 -100,-140 0,-140 Z" fill="url(#hat-fill)" />
+    
+    <!-- Emerald Identity Line (Modern/Minimalist) -->
+    <path d="M-85,85 L85,85" stroke="#10B981" stroke-width="8" stroke-linecap="round" opacity="0.8"/>
+    
+    <!-- Subtle Gloss -->
+    <ellipse cx="0" cy="-70" rx="80" ry="40" fill="url(#gloss)" opacity="0.3" />
+  </g>
+  
+  <!-- Clean Typography -->
+  <text x="256" y="455" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-weight="900" font-size="48" fill="white" text-anchor="middle" letter-spacing="10">
+    BLANQUITA <tspan fill="#10B981">IA</tspan>
+  </text>
 </svg>
