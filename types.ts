@@ -22,7 +22,6 @@ export interface InventoryItem {
   minThreshold: number;
   expiryDate?: string;
   lastUpdated: string;
-  pricePerUnit: number;
   batchInfo?: InventoryBatch[];
   location: string;
   isPerishable: boolean;

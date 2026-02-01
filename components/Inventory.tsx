@@ -36,9 +36,6 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
          <p className="text-[10px] text-slate-500 font-bold mt-1">Cubre: {coverage.toFixed(1)} días</p>
        )}
     </td>
-    <td className="px-14 py-12 text-sm font-bold text-slate-500">
-      {(item.quantity * item.pricePerUnit).toLocaleString()}€
-    </td>
     <td className="px-14 py-12">
       {coverage < 0.5 ? (
         <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase rounded-full border border-rose-500/20">
@@ -175,7 +172,6 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
               <tr className="bg-white/2">
                 <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest">Producto</th>
                 <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">Stock / Cobertura</th>
-                <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest">Valor</th>
                 <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest">Estatus</th>
                 <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest text-right">Acciones</th>
               </tr>

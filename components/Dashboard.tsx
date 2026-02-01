@@ -4,7 +4,6 @@ import { InventoryItem } from '../types';
 
 interface DashboardProps {
   stats: {
-    totalValue: number;
     criticalItems: number;
     unreadNotifications: number;
   };
@@ -83,7 +82,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, inventory, getDaily
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 md:gap-6">
-          <MetricCard title="Valor Almacén" value={`${stats.totalValue.toLocaleString()}€`} icon={<ShoppingBag className="text-emerald-400" />} trend="+2.4% mes" />
+          <MetricCard title="Total Productos" value={inventory.length} icon={<ShoppingBag className="text-emerald-400" />} trend="En inventario" />
           <MetricCard title="Estado Crítico" value={stats.criticalItems} icon={<AlertTriangle className="text-rose-500" />} trend="Acción Inmediata" color="text-rose-500" />
         </div>
       </div>

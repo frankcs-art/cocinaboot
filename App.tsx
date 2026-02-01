@@ -44,7 +44,6 @@ function App() {
 
   // Stats
   const stats = useMemo(() => ({
-    totalValue: inventory.reduce((acc, item) => acc + (item.quantity * item.pricePerUnit), 0),
     criticalItems: inventory.filter(i => i.quantity <= i.minThreshold).length,
     unreadNotifications: notifications.filter(n => !n.isRead).length
   }), [inventory, notifications]);
