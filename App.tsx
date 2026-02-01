@@ -252,6 +252,19 @@ function App() {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
+  const confirmOrder = () => {
+    const newNotification: AppNotification = {
+      id: Math.random().toString(36).substr(2, 9),
+      type: 'success',
+      title: 'Pedido Confirmado',
+      message: 'La orden ha sido procesada y enviada a los proveedores.',
+      timestamp: new Date().toISOString(),
+      isRead: false
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+    setAiSuggestion(null);
+  };
+
   const handleTabChange = (tab: any) => {
     setActiveTab(tab);
     setIsMobileMenuOpen(false);
@@ -353,7 +366,7 @@ function App() {
           }>
             {activeTab === 'dashboard' && <Dashboard stats={stats} inventory={inventory} getDailySuggestion={getDailySuggestion} isLoading={isLoading} setTab={handleTabChange} isHighDemand={isHighDemand} setIsHighDemand={setIsHighDemand} />}
             {activeTab === 'inventory' && <Inventory inventory={inventory} usageHistory={usage} searchTerm={searchTerm} onRecordUsage={recordUsage} onAddStock={addStock} onDeleteItem={deleteInventoryItem} isHighDemand={isHighDemand} />}
-            {activeTab === 'orders' && <Orders suppliers={SUPPLIERS} suggestion={aiSuggestion} onClearSuggestion={() => setAiSuggestion(null)} getDailySuggestion={getDailySuggestion} isLoading={isLoading} />}
+            {activeTab === 'orders' && <Orders suppliers={SUPPLIERS} suggestion={aiSuggestion} onClearSuggestion={() => setAiSuggestion(null)} getDailySuggestion={getDailySuggestion} onConfirmOrder={confirmOrder} isLoading={isLoading} />}
             {activeTab === 'chat' && <Chat messages={chatMessages} onSend={onChatSend} isLoading={isLoading} isThinking={isThinking} setIsThinking={setIsThinking} />}
             {activeTab === 'scan' && <Scanner />}
             {activeTab === 'notifications' && <Notifications notifications={notifications} markAllAsRead={markAllAsRead} />}

@@ -7,10 +7,11 @@ interface OrdersProps {
   suggestion: string | null;
   onClearSuggestion: () => void;
   getDailySuggestion: () => void;
+  onConfirmOrder: () => void;
   isLoading: boolean;
 }
 
-export const Orders: React.FC<OrdersProps> = ({ suppliers, suggestion, onClearSuggestion, getDailySuggestion, isLoading }) => {
+export const Orders: React.FC<OrdersProps> = ({ suppliers, suggestion, onClearSuggestion, getDailySuggestion, onConfirmOrder, isLoading }) => {
   return (
     <div className="space-y-6 md:space-y-10 animate-in slide-in-from-left-4 duration-500 pb-10">
       {!suggestion ? (
@@ -55,7 +56,10 @@ export const Orders: React.FC<OrdersProps> = ({ suppliers, suggestion, onClearSu
               <div dangerouslySetInnerHTML={{ __html: suggestion.replace(/\n/g, '<br/>') }}></div>
            </div>
            <div className="mt-6 md:mt-10 flex flex-col sm:flex-row gap-3 md:gap-6">
-              <button className="flex-1 bg-emerald-500 py-4 md:py-6 rounded-xl md:rounded-3xl text-black font-black text-base md:text-xl hover:bg-emerald-400 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3">
+              <button 
+                onClick={onConfirmOrder}
+                className="flex-1 bg-emerald-500 py-4 md:py-6 rounded-xl md:rounded-3xl text-black font-black text-base md:text-xl hover:bg-emerald-400 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3"
+              >
                  <ShoppingCart size={20} /> Confirmar Pedido
               </button>
               <button className="flex-1 bg-white/5 py-4 md:py-6 rounded-xl md:rounded-3xl text-white font-black text-base md:text-xl hover:bg-white/10 transition-all border border-white/10 active:scale-95 flex items-center justify-center">
