@@ -39,7 +39,7 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
         <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase rounded-full border border-rose-500/20">
            <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div> 🔴 CRÍTICO
         </span>
-      ) : coverage < 2 ? (
+      ) : coverage < 3 ? (
         <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-yellow-500/10 text-yellow-500 text-[10px] font-black uppercase rounded-full border border-yellow-500/20">
            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div> 🟡 REABASTECER
         </span>
@@ -203,7 +203,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase rounded-lg border border-rose-500/20">
                      <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div> 🔴 CRÍTICO
                   </span>
-                ) : coverageData[item.id] < 2 ? (
+                ) : coverageData[item.id] < 3 ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase rounded-lg border border-yellow-500/20">
                      <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> 🟡 REABASTECER
                   </span>

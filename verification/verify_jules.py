@@ -1,43 +1,34 @@
+from playwright.sync_api import Page, expect, sync_playwright
 import time
-from playwright.sync_api import sync_playwright, expect
 
-def verify_jules():
+def test_jules_dashboard(page: Page):
+    page.goto("http://localhost:3000")
+
+    # Wait for the dashboard to load
+    expect(page.get_by_text("Jules - IA Logística")).to_be_visible(timeout=10000)
+
+    # Capture Dashboard
+    page.screenshot(path="verification/dashboard_verified.png")
+
+    # Go to Inventory
+    page.get_by_role("button", name="Inventario").click()
+    expect(page.get_by_text("Logística de Suministros")).to_be_visible()
+
+    # Capture Inventory with Traffic Lights
+    page.screenshot(path="verification/inventory_verified.png")
+
+    # Go to Usage
+    page.get_by_role("button", name="Consumo Diario").click()
+    expect(page.get_by_text("Historial de Flujos")).to_be_visible()
+
+    # Capture Usage
+    page.screenshot(path="verification/usage_verified.png")
+
+if __name__ == "__main__":
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-
-        # Wait for dev server to be ready
-        max_retries = 10
-        for i in range(max_retries):
-            try:
-                page.goto("http://localhost:3000")
-                break
-            except:
-                time.sleep(2)
-
-        # 1. Dashboard & High Demand Toggle
-        page.screenshot(path="verification/01_dashboard.png")
-
-        # 2. Inventory Traffic Lights
-        page.get_by_role("button", name="INVENTARIO").click()
-        page.wait_for_selector("table")
-        page.screenshot(path="verification/02_inventory.png")
-
-        # 3. Usage Dual Registration
-        page.get_by_role("button", name="CONSUMO DIARIO").click()
-        page.wait_for_selector("select")
-        page.screenshot(path="verification/03_usage.png")
-
-        # 4. Chat Jules Protocol
-        page.get_by_role("button", name="ASISTENTE IA").click()
-        page.wait_for_selector("textarea, input[placeholder*='mensaje']")
-        chat_input = page.get_by_placeholder("Escribe un mensaje...")
-        chat_input.fill("Jules, dame el estado del Jamón Ibérico")
-        chat_input.press("Enter")
-        time.sleep(5) # Wait for AI response
-        page.screenshot(path="verification/04_chat.png")
-
-        browser.close()
-
-if __name__ == "__main__":
-    verify_jules()
+        try:
+            test_jules_dashboard(page)
+        finally:
+            browser.close()

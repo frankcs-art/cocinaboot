@@ -1,9 +1,13 @@
+
 import React from 'react';
 import { ChefHat, LayoutDashboard, Package, Truck, MessageSquare, Camera, History, LogOut } from 'lucide-react';
+import { User } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  user: User | null;
 }
 
 const NavItem: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
@@ -16,7 +20,9 @@ const NavItem: React.FC<{ active: boolean; onClick: () => void; icon: React.Reac
   </button>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, user }) => {
+  const initials = user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'JD';
+
   return (
     <>
       <div className="p-6 md:p-8">
@@ -47,12 +53,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
 
       <div className="p-4 md:p-6 m-4 bg-white/5 rounded-3xl border border-white/5 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-500 flex items-center justify-center font-bold text-white shadow-lg shrink-0">JD</div>
+          {user?.photoURL ? (
+            <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-xl object-cover shadow-lg shrink-0 border border-white/10" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-500 flex items-center justify-center font-bold text-white shadow-lg shrink-0">{initials}</div>
+          )}
           <div className="flex-1 overflow-hidden">
-            <p className="font-bold text-slate-100 text-sm truncate">Chef Karen A.</p>
-            <p className="text-slate-500 text-xs truncate">Administrador</p>
+            <p className="font-bold text-slate-100 text-sm truncate">{user?.displayName || 'Chef Karen A.'}</p>
+            <p className="text-slate-500 text-[10px] truncate uppercase tracking-tighter">{user?.email || 'Administrador'}</p>
           </div>
-          <button className="text-slate-600 hover:text-purple-400 transition-colors p-1"><LogOut size={16} /></button>
+          <button
+            onClick={() => auth.signOut()}
+            className="text-slate-600 hover:text-rose-500 transition-colors p-1"
+            title="Cerrar Sesión"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </>

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Bell, Search, Menu, Settings, X
+  Bell, Search, Menu, Settings, X, Loader2
 } from 'lucide-react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from './firebaseConfig';
 import { InventoryItem, AppNotification, ChatMessage, UsageHistory } from './types';
 import { GeminiService } from './geminiService';
-import { initDB, saveInventory, getInventory, recordUsageHistory, syncPendingActions } from './indexedDBService';
+import { initDB, syncPendingActions } from './indexedDBService';
 import StorageService from './storageService';
 import Logger from './logger';
 import { INITIAL_INVENTORY, MOCK_USAGE, SUPPLIERS } from './constants';
@@ -18,6 +20,7 @@ import { Inventory } from './components/Inventory';
 import { Notifications } from './components/Notifications';
 import { Usage } from './components/Usage';
 import { VoiceControl } from './components/VoiceControl';
+import { Login } from './components/Login';
 
 // Lazy loaded components
 const Orders = React.lazy(() => import('./components/Orders').then(module => ({ default: module.Orders })));
@@ -25,6 +28,8 @@ const Chat = React.lazy(() => import('./components/Chat').then(module => ({ defa
 const Scanner = React.lazy(() => import('./components/Scanner').then(module => ({ default: module.Scanner })));
 
 function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'inventory' | 'orders' | 'chat' | 'scan' | 'notifications' | 'usage'>('dashboard');
   const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
   const [usage, setUsage] = useState<UsageHistory[]>(MOCK_USAGE);
@@ -37,6 +42,18 @@ function App() {
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Authentication Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthLoading(false);
+      if (currentUser) {
+        Logger.success(`Session started for ${currentUser.displayName}`);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   // Stats
   const stats = useMemo(() => ({
     totalValue: inventory.reduce((acc, item) => acc + (item.quantity * item.pricePerUnit), 0),
@@ -44,12 +61,11 @@ function App() {
     unreadNotifications: notifications.filter(n => !n.isRead).length
   }), [inventory, notifications]);
 
-  // Sync notifications with inventory (Coverage Alerts + Min Threshold)
+  // Sync notifications with inventory
   useEffect(() => {
     const alerts: AppNotification[] = [];
 
     inventory.forEach(item => {
-      // 1. Min Threshold Check
       if (item.quantity <= item.minThreshold) {
         alerts.push({
           id: `alert-min-${item.id}-${new Date().toDateString()}`,
@@ -61,14 +77,12 @@ function App() {
         });
       }
 
-      // 2. Time Coverage Check (CPD Based)
       const itemUsage = usage.filter(u => u.itemId === item.id && u.type === 'Consumo');
       if (itemUsage.length > 0) {
         const uniqueDays = new Set(itemUsage.map(u => u.date)).size;
         const totalConsumed = itemUsage.reduce((acc, u) => acc + u.quantityConsumed, 0);
         let cpd = uniqueDays > 0 ? totalConsumed / uniqueDays : totalConsumed;
 
-        // Ajuste de Eventos: +30% CPD para perecederos en Alta Demanda
         if (isHighDemand && item.isPerishable) {
           cpd = cpd * 1.3;
         }
@@ -105,47 +119,41 @@ function App() {
     });
   }, [inventory, isHighDemand, usage]);
 
-  // Al cargar la app
+  // Initial Load
   useEffect(() => {
+    if (!user) return;
     const loadData = async () => {
-      Logger.info('App initializing...');
       await StorageService.init();
       const savedData = await StorageService.loadInventoryData();
       if (savedData.length > 0) {
         setInventory(savedData);
-        Logger.success('Loaded inventory from DB', { items: savedData.length });
       }
       const savedChat = StorageService.loadChatMessages();
       if (savedChat.length > 0) {
         setChatMessages(savedChat);
-        Logger.success('Loaded chat messages', { messages: savedChat.length });
       }
-      StorageService.printDebugInfo();
     };
     loadData();
-  }, []);
+  }, [user]);
 
-  // Al guardar cambios (debounced para evitar múltiples guardados)
+  // Persistence
   useEffect(() => {
+    if (!user) return;
     const timer = setTimeout(() => {
       StorageService.saveInventoryData(inventory);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [inventory]);
+  }, [inventory, user]);
 
-  // Guardar chat cuando cambia
   useEffect(() => {
-    if (chatMessages.length > 0) {
+    if (chatMessages.length > 0 && user) {
       StorageService.saveChatMessages(chatMessages);
     }
-  }, [chatMessages]);
+  }, [chatMessages, user]);
 
   const recordUsage = (itemId: string, quantity: number, type: 'Consumo' | 'Merma' = 'Consumo') => {
     const item = inventory.find(i => i.id === itemId);
-    if (!item || quantity <= 0) {
-      console.warn('⚠️ Invalid usage record:', { itemId, quantity });
-      return;
-    }
+    if (!item || quantity <= 0) return;
 
     setInventory(prev => prev.map(i => {
       if (i.id !== itemId) return i;
@@ -222,34 +230,31 @@ function App() {
     }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-  };
-
-  const handleTabChange = (tab: any) => {
-    setActiveTab(tab);
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleVoiceCommand = (command: string, transcript: string) => {
-    if (command) {
-      setActiveTab(command as any);
-    }
-  };
-
   const isOnline = useOnlineStatus();
-
   useEffect(() => {
-    if (isOnline) {
-      syncPendingActions();
-    }
+    if (isOnline) syncPendingActions();
   }, [isOnline]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center space-y-6">
+        <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
+          <Loader2 className="text-emerald-500 animate-spin" size={32} />
+        </div>
+        <p className="text-slate-500 text-xs font-black uppercase tracking-widest animate-pulse">Iniciando Jules...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
 
   return (
     <div className="flex h-screen bg-[#09090b] text-slate-200 overflow-hidden font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
       {!isOnline && <OfflineBanner />}
       <aside className="w-72 border-r border-white/5 flex flex-col hidden lg:flex shrink-0 bg-black/20 backdrop-blur-3xl">
-        <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+        <Sidebar activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab as any); setIsMobileMenuOpen(false); }} user={user} />
       </aside>
 
       {isMobileMenuOpen && (
@@ -261,7 +266,7 @@ function App() {
                 <X size={24} />
               </button>
             </div>
-            <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+            <Sidebar activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab as any); setIsMobileMenuOpen(false); }} user={user} />
           </aside>
         </div>
       )}
@@ -269,10 +274,7 @@ function App() {
       <main className="flex-1 flex flex-col bg-[#09090b] overflow-hidden relative">
         <header className="h-16 md:h-20 bg-black/40 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4 md:px-10 sticky top-0 z-30">
           <div className="flex items-center gap-2 md:gap-6">
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 lg:hidden text-slate-400 hover:text-white transition-colors"
-            >
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 lg:hidden text-slate-400 hover:text-white transition-colors">
               <Menu size={24} />
             </button>
             <h2 className="text-sm md:text-xl font-bold text-white tracking-tight uppercase tracking-widest truncate max-w-[150px] md:max-w-none">{activeTab}</h2>
@@ -281,17 +283,9 @@ function App() {
           <div className="flex items-center gap-2 md:gap-6">
             <div className="relative group hidden sm:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-emerald-500 transition-colors" size={16} />
-              <input
-                type="text"
-                placeholder="Buscar..."
-                className="bg-white/5 border border-white/10 pl-12 pr-6 py-2 rounded-2xl text-sm w-40 md:w-80 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-slate-300 placeholder:text-slate-600"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)} />
+              <input type="text" placeholder="Buscar..." className="bg-white/5 border border-white/10 pl-12 pr-6 py-2 rounded-2xl text-sm w-40 md:w-80 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-slate-300 placeholder:text-slate-600" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
-            <button
-              onClick={() => setActiveTab('notifications')}
-              className={`p-2.5 md:p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all relative ${activeTab === 'notifications' ? 'border-emerald-500/50 bg-emerald-500/5 text-emerald-400' : ''}`}
-            >
+            <button onClick={() => setActiveTab('notifications')} className={`p-2.5 md:p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all relative ${activeTab === 'notifications' ? 'border-emerald-500/50 bg-emerald-500/5 text-emerald-400' : ''}`}>
               <Bell size={20} />
               {stats.unreadNotifications > 0 && (
                 <span className="absolute top-2 right-2 md:top-3 md:right-3 w-4 h-4 bg-rose-500 rounded-full border-2 border-[#09090b] flex items-center justify-center text-[8px] font-black text-white">
@@ -303,23 +297,18 @@ function App() {
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 space-y-6 md:space-y-10 custom-scrollbar">
-          <React.Suspense fallback={
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
-            </div>
-          }>
-            {activeTab === 'dashboard' && <Dashboard stats={stats} inventory={inventory} getDailySuggestion={getDailySuggestion} isLoading={isLoading} setTab={handleTabChange} isHighDemand={isHighDemand} setIsHighDemand={setIsHighDemand} />}
+          <React.Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="animate-spin text-emerald-500" size={32} /></div>}>
+            {activeTab === 'dashboard' && <Dashboard stats={stats} inventory={inventory} getDailySuggestion={getDailySuggestion} isLoading={isLoading} setTab={setActiveTab as any} isHighDemand={isHighDemand} setIsHighDemand={setIsHighDemand} />}
             {activeTab === 'inventory' && <Inventory inventory={inventory} usageHistory={usage} searchTerm={searchTerm} onRecordUsage={recordUsage} onAddStock={addStock} isHighDemand={isHighDemand} />}
             {activeTab === 'orders' && <Orders suppliers={SUPPLIERS} suggestion={aiSuggestion} onClearSuggestion={() => setAiSuggestion(null)} getDailySuggestion={getDailySuggestion} isLoading={isLoading} />}
             {activeTab === 'chat' && <Chat messages={chatMessages} onSend={onChatSend} isLoading={isLoading} isThinking={isThinking} setIsThinking={setIsThinking} />}
             {activeTab === 'scan' && <Scanner />}
-            {activeTab === 'notifications' && <Notifications notifications={notifications} markAllAsRead={markAllAsRead} />}
+            {activeTab === 'notifications' && <Notifications notifications={notifications} markAllAsRead={() => setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))} />}
             {activeTab === 'usage' && <Usage usage={usage} inventory={inventory} onRecordUsage={recordUsage} />}
           </React.Suspense>
         </div>
       </main>
-
-      <VoiceControl onCommand={handleVoiceCommand} />
+      <VoiceControl onCommand={(cmd) => { if (cmd) setActiveTab(cmd as any); }} />
     </div>
   );
 }

@@ -13,7 +13,7 @@ export class GeminiService {
     useThinking: boolean = false
   ): Promise<string> {
     const ai = await this.getClient();
-    const model = 'gemini-3-pro-preview';
+    const model = useThinking ? 'gemini-2.0-flash-thinking-exp-01-21' : 'gemini-1.5-flash';
     
     const inventoryContext = `Inventario Actual: ${JSON.stringify(inventory)}`;
     const systemInstruction = `
@@ -58,7 +58,7 @@ Contexto del inventario: ${inventoryContext}`;
 
   static async suggestDailyOrders(inventory: InventoryItem[], usageHistory: UsageHistory[], isHighDemand: boolean): Promise<string> {
     const ai = await this.getClient();
-    const model = 'gemini-3-pro-preview';
+    const model = 'gemini-2.0-flash-thinking-exp-01-21';
     
     const prompt = `Analiza los siguientes datos operativos para generar PEDIDOS SUGERIDOS:
     - Inventario: ${JSON.stringify(inventory)}
@@ -93,7 +93,7 @@ Contexto del inventario: ${inventoryContext}`;
 
   static async analyzeKitchenImage(base64Image: string, mimeType: string): Promise<string> {
     const ai = await this.getClient();
-    const model = 'gemini-3-pro-preview';
+    const model = 'gemini-1.5-flash';
     
     const prompt = `Actúa como Jules - Escáner de Logística. Extrae del albarán/imagen:
     - Producto.

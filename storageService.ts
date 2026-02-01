@@ -1,6 +1,6 @@
 /**
  * Storage Service - Gestión de persistencia con IndexedDB + LocalStorage
- * Maneja: Inventario, Historial, Chat, Suppliers, Preferencias
+ * Maneja: Inventario, Historial, Chat, Suppliers, Preferencias y Telemetría Jules
  */
 
 import { InventoryItem, UsageHistory, ChatMessage, Supplier } from './types';
@@ -19,6 +19,7 @@ const STORAGE_KEYS = {
   CHAT_MESSAGES: 'blanquita_chat_messages',
   USER_PREFERENCES: 'blanquita_preferences',
   LAST_SYNC: 'blanquita_last_sync',
+  STATE_SNAPSHOTS: 'jules_state_snapshots',
 };
 
 class StorageService {
@@ -28,10 +29,37 @@ class StorageService {
   static async init(): Promise<void> {
     try {
       await initDB();
-      Logger.success('Storage Service initialized');
+      Logger.success('Storage Service initialized [OP Mode]');
     } catch (error) {
       Logger.error('Error initializing storage', error);
     }
+  }
+
+  // ============ SNAPSHOT SYSTEM (OP DEBUG) ============
+  static createSnapshot(inventory: InventoryItem[], reason: string): void {
+    try {
+      const snapshots = this.getSnapshots();
+      const newSnapshot = {
+        timestamp: new Date().toISOString(),
+        reason,
+        itemCount: inventory.length,
+        totalStock: inventory.reduce((acc, i) => acc + i.quantity, 0),
+        // Guardamos solo un resumen para no saturar LocalStorage
+        summary: inventory.map(i => ({ id: i.id, q: i.quantity }))
+      };
+
+      snapshots.unshift(newSnapshot);
+      // Mantener solo los últimos 10 snapshots
+      localStorage.setItem(STORAGE_KEYS.STATE_SNAPSHOTS, JSON.stringify(snapshots.slice(0, 10)));
+      Logger.debug(`Snapshot created: ${reason}`, newSnapshot);
+    } catch (error) {
+      Logger.error('Error creating snapshot', error);
+    }
+  }
+
+  static getSnapshots(): any[] {
+    const data = localStorage.getItem(STORAGE_KEYS.STATE_SNAPSHOTS);
+    return data ? JSON.parse(data) : [];
   }
 
   // ============ INVENTARIO ============
@@ -39,6 +67,10 @@ class StorageService {
     try {
       await saveInventory(items);
       this.updateLastSync();
+      // Snapshot automático en guardados significativos
+      if (Math.random() > 0.8) { // 20% de probabilidad para no saturar
+          this.createSnapshot(items, 'Auto-sync');
+      }
       Logger.success(`Saved ${items.length} inventory items to DB`);
     } catch (error) {
       Logger.error('Error saving inventory', error);
@@ -60,41 +92,9 @@ class StorageService {
   static async recordUsage(usage: UsageHistory): Promise<void> {
     try {
       await recordUsageHistory(usage);
-      Logger.success(`Recorded usage for item: ${usage.itemName}`);
+      Logger.success(`Recorded usage: ${usage.itemName} | -${usage.quantityConsumed} | ${usage.type}`);
     } catch (error) {
       Logger.error('Error recording usage', error);
-    }
-  }
-
-  static async getUsageForItem(itemId: string): Promise<UsageHistory[]> {
-    try {
-      const history = await getUsageHistory(itemId);
-      Logger.success(`Loaded ${history.length} usage records for item ${itemId}`);
-      return history;
-    } catch (error) {
-      Logger.error('Error getting usage history', error);
-      return [];
-    }
-  }
-
-  // ============ PROVEEDORES ============
-  static async saveSuppliersData(suppliers: Supplier[]): Promise<void> {
-    try {
-      await saveSuppliers(suppliers);
-      Logger.success(`Saved ${suppliers.length} suppliers to DB`);
-    } catch (error) {
-      Logger.error('Error saving suppliers', error);
-    }
-  }
-
-  static async loadSuppliersData(): Promise<Supplier[]> {
-    try {
-      const suppliers = await getSuppliers();
-      Logger.success(`Loaded ${suppliers.length} suppliers from DB`);
-      return suppliers;
-    } catch (error) {
-      Logger.error('Error loading suppliers', error);
-      return [];
     }
   }
 
@@ -102,7 +102,6 @@ class StorageService {
   static saveChatMessages(messages: ChatMessage[]): void {
     try {
       localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(messages));
-      Logger.success(`Saved ${messages.length} chat messages`);
     } catch (error) {
       Logger.error('Error saving chat messages', error);
     }
@@ -111,49 +110,9 @@ class StorageService {
   static loadChatMessages(): ChatMessage[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES);
-      if (data) {
-        const messages = JSON.parse(data) as ChatMessage[];
-        Logger.success(`Loaded ${messages.length} chat messages`);
-        return messages;
-      }
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
       return [];
-    } catch (error) {
-      Logger.error('Error loading chat messages', error);
-      return [];
-    }
-  }
-
-  static clearChatMessages(): void {
-    try {
-      localStorage.removeItem(STORAGE_KEYS.CHAT_MESSAGES);
-      Logger.success('Chat messages cleared');
-    } catch (error) {
-      Logger.error('Error clearing chat', error);
-    }
-  }
-
-  // ============ PREFERENCIAS ============
-  static savePreferences(prefs: Record<string, unknown>): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(prefs));
-      Logger.success('Preferences saved');
-    } catch (error) {
-      Logger.error('Error saving preferences', error);
-    }
-  }
-
-  static loadPreferences(): Record<string, unknown> {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
-      if (data) {
-        const prefs = JSON.parse(data) as Record<string, unknown>;
-        Logger.success('Preferences loaded');
-        return prefs;
-      }
-      return {};
-    } catch (error) {
-      Logger.error('Error loading preferences', error);
-      return {};
     }
   }
 
@@ -166,25 +125,67 @@ class StorageService {
     return localStorage.getItem(STORAGE_KEYS.LAST_SYNC) || 'Never';
   }
 
-  // ============ DEBUG ============
-  static printDebugInfo(): void {
-    Logger.group('Storage Debug Info');
-    Logger.info('Last Sync', this.getLastSync());
-    Logger.info('Chat Messages', this.loadChatMessages().length);
-    Logger.info('Preferences', this.loadPreferences());
-    Logger.info('LocalStorage Size', JSON.stringify(localStorage).length + ' bytes');
-    Logger.groupEnd();
+  // ============ DIAGNOSTIC Jules ============
+  static async getDiagnosticSummary(): Promise<any> {
+    const inventory = await this.loadInventoryData();
+    const snapshots = this.getSnapshots();
+    const lastSync = this.getLastSync();
+
+    return {
+      status: '🟢 OPERATIVO',
+      version: 'Jules 1.0.4-OP',
+      lastSync,
+      inventoryHealth: {
+        totalItems: inventory.length,
+        criticalItems: inventory.filter(i => i.quantity <= i.minThreshold).length,
+        totalBatches: inventory.reduce((acc, i) => acc + (i.batchInfo?.length || 0), 0)
+      },
+      storageMetrics: {
+        lsSize: JSON.stringify(localStorage).length,
+        snapshots: snapshots.length
+      }
+    };
+  }
+
+  // ============ SUPPLIERS ============
+  static async saveSuppliersData(suppliers: Supplier[]): Promise<void> {
+    try {
+      await saveSuppliers(suppliers);
+    } catch (error) {
+      Logger.error('Error saving suppliers', error);
+    }
+  }
+
+  static async loadSuppliersData(): Promise<Supplier[]> {
+    try {
+      return await getSuppliers();
+    } catch (error) {
+      return [];
+    }
+  }
+
+  // ============ PREFERENCES ============
+  static saveUserPreferences(prefs: any): void {
+    localStorage.setItem(STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(prefs));
+  }
+
+  static getUserPreferences(): any {
+    const data = localStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
+    return data ? JSON.parse(data) : null;
+  }
+
+  // ============ UTILS ============
+  static clearChatMessages(): void {
+    localStorage.removeItem(STORAGE_KEYS.CHAT_MESSAGES);
   }
 
   static async printFullDebugInfo(): Promise<void> {
-    Logger.group('Full Debug Info');
-    Logger.info('Last Sync', this.getLastSync());
-    Logger.info('Chat Messages', this.loadChatMessages().length);
-    const inventory = await this.loadInventoryData();
-    const suppliers = await this.loadSuppliersData();
-    Logger.info('Inventory Items', inventory.length);
-    Logger.info('Suppliers', suppliers.length);
-    Logger.info('LocalStorage Size', JSON.stringify(localStorage).length + ' bytes');
+    const diagnostic = await this.getDiagnosticSummary();
+    Logger.group('Jules System Diagnostic');
+    Logger.info('Core Status', diagnostic.status);
+    Logger.info('Inventory Health', diagnostic.inventoryHealth);
+    Logger.info('Storage Metrics', diagnostic.storageMetrics);
+    Logger.info('Snapshots', this.getSnapshots());
     Logger.printHistory();
     Logger.groupEnd();
   }
