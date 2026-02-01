@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, signInWithGoogle, logout } from '../firebase';
+import { auth, signInWithGoogle, logout, isFirebaseConfigured } from '../firebase';
 import Logger from '../logger';
 
 export function useAuth() {
@@ -22,17 +22,17 @@ export function useAuth() {
   const handleLogin = async () => {
     try {
       const result = await signInWithGoogle();
-      if (result && !result.user && (result as any).email) {
-          // This is our mock user
-          const mockUser = {
-              email: (result as any).email,
-              displayName: (result as any).displayName,
-              uid: 'mock-123'
-          } as any;
-          setUser(mockUser);
-          Logger.success('Mock login successful');
-      } else {
-        Logger.success('Login successful');
+      
+      // Handle both real Firebase UserCredential and our custom mock structure
+      const signedInUser = result?.user;
+      
+      if (signedInUser && !isFirebaseConfigured) {
+        // If it's a mock login, we manually set the user state since 
+        // onAuthStateChanged won't trigger with the mock user
+        setUser(signedInUser as User);
+        Logger.success('Mock login successful', { email: signedInUser.email });
+      } else if (signedInUser) {
+        Logger.success('Login successful', { email: signedInUser.email });
       }
     } catch (error) {
       Logger.error('Login failed', error);

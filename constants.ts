@@ -5,36 +5,61 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
 {
   id: '1', name: 'Jamón Ibérico 5J', category: 'Ibéricos', quantity: 4.2, unit: 'PZ', minThreshold: 2,
   lastUpdated: new Date().toISOString(), pricePerUnit: 45.50, location: 'Cámara 1', isPerishable: true,
-  batchInfo: [{ entryDate: '2026-01-10', quantity: 4.2 }]
+  batchInfo: [{ entryDate: '2026-01-10', quantity: 4.2 }],
+  image: '/icons/ibericos.png'
 },
 {
   id: '6', name: 'Lomo Embuchado de Bellota', category: 'Ibéricos', quantity: 15, unit: 'PZ', minThreshold: 8,
   lastUpdated: new Date().toISOString(), pricePerUnit: 18.00, location: 'Cámara 1', isPerishable: true,
-  batchInfo: [{ entryDate: '2026-01-12', quantity: 15 }]
+  batchInfo: [{ entryDate: '2026-01-12', quantity: 15 }],
+  image: '/icons/lacon.png'
 },
 // ACEITES (Categoría: 'Aceites')
 {
   id: '2', name: 'AOVE Picual Premium', category: 'Aceites', quantity: 45, unit: 'L', minThreshold: 20,
   lastUpdated: new Date().toISOString(), pricePerUnit: 8.50, location: 'Almacén Seco', isPerishable: false,
-  batchInfo: [{ entryDate: '2026-01-05', quantity: 45 }]
+  batchInfo: [{ entryDate: '2026-01-05', quantity: 45 }],
+  image: '/icons/aceites.png'
 },
 // LÁCTEOS (Categoría: 'Lácteos')
 {
   id: '12', name: 'Queso Cabrales', category: 'Lácteos', quantity: 5, unit: 'KG', minThreshold: 2,
   lastUpdated: new Date().toISOString(), pricePerUnit: 32.00, location: 'Cámara 2', isPerishable: true,
-  batchInfo: [{ entryDate: '2026-01-14', quantity: 5 }]
+  batchInfo: [{ entryDate: '2026-01-14', quantity: 5 }],
+  image: '/icons/lacteos.png'
 },
 // PESCADOS / CONSERVAS (Categoría: 'Pescados')
 {
   id: '4', name: 'Bacalao Giraldo', category: 'Pescados', quantity: 18, unit: 'KG', minThreshold: 8,
   lastUpdated: new Date().toISOString(), pricePerUnit: 18.50, location: 'Cámara 3', isPerishable: true,
-  batchInfo: [{ entryDate: '2026-01-13', quantity: 18 }]
+  batchInfo: [{ entryDate: '2026-01-13', quantity: 18 }],
+  image: '/icons/Salmon.png' // Closest match
 },
 // DESPENSA / LEGUMBRES (Categoría: 'Despensa')
 {
   id: '25', name: 'Arroz Bomba Valencia', category: 'Despensa', quantity: 50, unit: 'KG', minThreshold: 20,
   lastUpdated: new Date().toISOString(), pricePerUnit: 3.20, location: 'Almacén Seco', isPerishable: false,
   batchInfo: [{ entryDate: '2026-01-01', quantity: 50 }]
+},
+{
+  id: '30', name: 'Zanahorias Eco', category: 'Verduras', quantity: 12, unit: 'KG', minThreshold: 5,
+  lastUpdated: new Date().toISOString(), pricePerUnit: 1.50, location: 'Cámara 3', isPerishable: true,
+  image: '/icons/zanahoria.png'
+},
+{
+  id: '31', name: 'Gambas de Palamós', category: 'Pescados', quantity: 8, unit: 'KG', minThreshold: 3,
+  lastUpdated: new Date().toISOString(), pricePerUnit: 45.00, location: 'Cámara 3', isPerishable: true,
+  image: '/icons/gambas.png'
+},
+{
+  id: '32', name: 'Costillas de Cerdo Ibérico', category: 'Ibéricos', quantity: 15, unit: 'KG', minThreshold: 5,
+  lastUpdated: new Date().toISOString(), pricePerUnit: 12.00, location: 'Cámara 1', isPerishable: true,
+  image: '/icons/Costillas.png'
+},
+{
+  id: '33', name: 'Cebollas Tiernas', category: 'Verduras', quantity: 20, unit: 'KG', minThreshold: 8,
+  lastUpdated: new Date().toISOString(), pricePerUnit: 0.80, location: 'Almacén Seco', isPerishable: true,
+  image: '/icons/cebolla.png'
 }
 ];
 

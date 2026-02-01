@@ -9,15 +9,20 @@ interface InventoryProps {
   searchTerm: string;
   onRecordUsage: (itemId: string, quantity: number) => void;
   onAddStock: (itemId: string, quantity: number, location: string) => void;
+  onDeleteItem: (itemId: string) => void;
   isHighDemand: boolean;
 }
 
-const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: any }> = ({ item, coverage, onSelect }) => (
+const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: any; onDelete: (id: string) => void }> = ({ item, coverage, onSelect, onDelete }) => (
   <tr className="hover:bg-white/2 transition-colors group">
     <td className="px-14 py-12">
       <div className="flex items-center gap-4">
-        <div className={`w-14 h-14 rounded-3xl border flex items-center justify-center text-xl font-black transition-transform group-hover:scale-110 shrink-0 ${CATEGORY_THEMES[item.category] || CATEGORY_THEMES.Default}`}>
-          {item.name[0]}
+        <div className={`w-14 h-14 rounded-3xl border flex items-center justify-center text-xl font-black transition-transform group-hover:scale-110 shrink-0 overflow-hidden ${CATEGORY_THEMES[item.category] || CATEGORY_THEMES.Default}`}>
+          {item.image ? (
+            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+          ) : (
+            item.name[0]
+          )}
         </div>
         <div>
           <p className="font-black text-white text-lg leading-none truncate max-w-[200px]">{item.name}</p>
@@ -56,14 +61,17 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
       >
         <Clock size={18} />
       </button>
-      <button className="p-3 bg-white/5 hover:bg-rose-500/10 rounded-2xl text-slate-400 hover:text-rose-500 transition-all">
+      <button 
+        onClick={() => onDelete(item.id)}
+        className="p-3 bg-white/5 hover:bg-rose-500/10 rounded-2xl text-slate-400 hover:text-rose-500 transition-all"
+      >
         <Trash2 size={18} />
       </button>
     </td>
   </tr>
 );
 
-export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, searchTerm, onRecordUsage, onAddStock, isHighDemand }) => {
+export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, searchTerm, onRecordUsage, onAddStock, onDeleteItem, isHighDemand }) => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [usageValue, setUsageValue] = useState(1);
   const [filterCategory, setFilterCategory] = useState<string>('All');
@@ -174,7 +182,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
             </thead>
             <tbody className="">
               {processedInventory.map(item => (
-                <InventoryRow key={item.id} item={item} coverage={coverageData[item.id]} onSelect={setSelectedItem} />
+                <InventoryRow key={item.id} item={item} coverage={coverageData[item.id]} onSelect={setSelectedItem} onDelete={onDeleteItem} />
               ))}
             </tbody>
           </table>
@@ -185,8 +193,12 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
             <div key={item.id} className="p-5 space-y-4 hover:bg-white/2 transition-colors group active:bg-white/5" onClick={() => setSelectedItem(item)}>
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-lg font-black shrink-0 ${CATEGORY_THEMES[item.category] || CATEGORY_THEMES.Default}`}>
-                    {item.name[0]}
+                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-lg font-black shrink-0 overflow-hidden ${CATEGORY_THEMES[item.category] || CATEGORY_THEMES.Default}`}>
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      item.name[0]
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="font-black text-white text-base leading-tight truncate">{item.name}</p>
@@ -212,10 +224,15 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> 🟢 ÓPTIMO
                   </span>
                 )}
-                <div className="flex gap-2">
-                   <button className="p-2 bg-white/5 rounded-xl text-slate-400"><History size={16}/></button>
-                   <button className="p-2 bg-rose-500/10 rounded-xl text-rose-500"><Trash2 size={16}/></button>
-                </div>
+                 <div className="flex gap-2">
+                    <button className="p-2 bg-white/5 rounded-xl text-slate-400"><History size={16}/></button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onDeleteItem(item.id); }}
+                      className="p-2 bg-rose-500/10 rounded-xl text-rose-500 active:scale-95"
+                    >
+                      <Trash2 size={16}/>
+                    </button>
+                 </div>
               </div>
             </div>
           ))}
@@ -231,7 +248,13 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
             </div>
             <div className="space-y-6 md:space-y-8">
                <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl md:rounded-3xl border border-white/20">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black shrink-0 ${CATEGORY_THEMES[selectedItem.category] || CATEGORY_THEMES.Default}`}>{selectedItem.name[0]}</div>
+                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-lg font-black shrink-0 overflow-hidden ${CATEGORY_THEMES[selectedItem.category] || CATEGORY_THEMES.Default}`}>
+                    {selectedItem.image ? (
+                      <img src={selectedItem.image} alt={selectedItem.name} className="w-full h-full object-cover" />
+                    ) : (
+                      selectedItem.name[0]
+                    )}
+                  </div>
                   <div className="min-w-0">
                     <p className="font-bold text-white truncate">{selectedItem.name}</p>
                     <p className="text-xs text-slate-500">Stock: {selectedItem.quantity} {selectedItem.unit}</p>

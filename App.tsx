@@ -117,8 +117,23 @@ function App() {
       await StorageService.init();
       const savedData = await StorageService.loadInventoryData();
       if (savedData.length > 0) {
-        setInventory(savedData);
+        // Migración: Asegurar que los items tengan sus imágenes si están definidas en INITIAL_INVENTORY
+        const migratedData = savedData.map(item => {
+          if (!item.image) {
+            const initialItem = INITIAL_INVENTORY.find(ii => ii.id === item.id);
+            if (initialItem?.image) {
+              return { ...item, image: initialItem.image };
+            }
+          }
+          return item;
+        });
+        setInventory(migratedData);
         Logger.success('Loaded inventory from DB', { items: savedData.length });
+      } else {
+        // Cargar inventario inicial si está vacío
+        setInventory(INITIAL_INVENTORY);
+        await StorageService.saveInventoryData(INITIAL_INVENTORY);
+        Logger.info('Seeded initial inventory');
       }
       const savedChat = StorageService.loadChatMessages();
       if (savedChat.length > 0) {
@@ -197,6 +212,12 @@ function App() {
       lastUpdated: new Date().toISOString(),
       batchInfo: [...(i.batchInfo || []), { entryDate: new Date().toISOString(), quantity }]
     } : i));
+  };
+
+  const deleteInventoryItem = (itemId: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+      setInventory(prev => prev.filter(i => i.id !== itemId));
+    }
   };
 
   const getDailySuggestion = async () => {
@@ -331,7 +352,7 @@ function App() {
             </div>
           }>
             {activeTab === 'dashboard' && <Dashboard stats={stats} inventory={inventory} getDailySuggestion={getDailySuggestion} isLoading={isLoading} setTab={handleTabChange} isHighDemand={isHighDemand} setIsHighDemand={setIsHighDemand} />}
-            {activeTab === 'inventory' && <Inventory inventory={inventory} usageHistory={usage} searchTerm={searchTerm} onRecordUsage={recordUsage} onAddStock={addStock} isHighDemand={isHighDemand} />}
+            {activeTab === 'inventory' && <Inventory inventory={inventory} usageHistory={usage} searchTerm={searchTerm} onRecordUsage={recordUsage} onAddStock={addStock} onDeleteItem={deleteInventoryItem} isHighDemand={isHighDemand} />}
             {activeTab === 'orders' && <Orders suppliers={SUPPLIERS} suggestion={aiSuggestion} onClearSuggestion={() => setAiSuggestion(null)} getDailySuggestion={getDailySuggestion} isLoading={isLoading} />}
             {activeTab === 'chat' && <Chat messages={chatMessages} onSend={onChatSend} isLoading={isLoading} isThinking={isThinking} setIsThinking={setIsThinking} />}
             {activeTab === 'scan' && <Scanner />}

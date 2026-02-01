@@ -26,6 +26,7 @@ export interface InventoryItem {
   batchInfo?: InventoryBatch[];
   location: string;
   isPerishable: boolean;
+  image?: string;
 }
 
 export interface UsageHistory {
