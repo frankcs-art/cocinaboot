@@ -40,7 +40,13 @@ export const Chat: React.FC<ChatProps> = ({ messages, onSend, isLoading, isThink
            <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
            <div className="flex items-center gap-2 md:gap-4">
               <span className="text-[8px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest">IA Pro</span>
-              <button onClick={() => setIsThinking(!isThinking)} className={`w-10 md:w-14 h-5 md:h-7 rounded-full relative transition-all duration-300 ${isThinking ? 'bg-emerald-500' : 'bg-slate-800'}`}>
+              <button
+                onClick={() => setIsThinking(!isThinking)}
+                role="switch"
+                aria-checked={isThinking}
+                aria-label="Alternar modo IA Pro"
+                className={`w-10 md:w-14 h-5 md:h-7 rounded-full relative transition-all duration-300 ${isThinking ? 'bg-emerald-500' : 'bg-slate-800'}`}
+              >
                 <div className={`absolute top-0.5 md:top-1 w-4 md:w-5 h-4 md:h-5 bg-white rounded-full transition-all shadow-lg ${isThinking ? 'left-5 md:left-8' : 'left-0.5 md:left-1'}`} />
               </button>
            </div>
@@ -80,7 +86,12 @@ export const Chat: React.FC<ChatProps> = ({ messages, onSend, isLoading, isThink
           value={input} 
           onChange={(e) => setInput(e.target.value)} 
         />
-        <button type="submit" disabled={isLoading} className="w-12 md:w-20 bg-emerald-500 text-black rounded-xl md:rounded-3xl hover:bg-emerald-400 transition-all shadow-2xl flex items-center justify-center active:scale-90 disabled:opacity-50 shrink-0">
+        <button
+          type="submit"
+          disabled={isLoading}
+          aria-label="Enviar mensaje"
+          className="w-12 md:w-20 bg-emerald-500 text-black rounded-xl md:rounded-3xl hover:bg-emerald-400 transition-all shadow-2xl flex items-center justify-center active:scale-90 disabled:opacity-50 shrink-0"
+        >
           <Send className="w-5 h-5 md:w-7 md:h-7" />
         </button>
       </form>

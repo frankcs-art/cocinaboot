@@ -55,6 +55,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, inventory, getDaily
                 </div>
                 <button
                   onClick={() => setIsHighDemand(!isHighDemand)}
+                  role="switch"
+                  aria-checked={isHighDemand}
+                  aria-label="Alternar modo de alta demanda"
                   className={`w-12 h-6 rounded-full transition-all relative ${isHighDemand ? 'bg-rose-500' : 'bg-zinc-700'}`}
                 >
                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isHighDemand ? 'left-7' : 'left-1'}`}></div>

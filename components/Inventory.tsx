@@ -54,12 +54,14 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
     <td className="px-14 py-12 text-right whitespace-nowrap">
       <button 
         onClick={() => onSelect(item)}
+        aria-label="Ver historial de consumo"
         className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all mr-3"
       >
         <Clock size={18} />
       </button>
       <button 
         onClick={() => onDelete(item.id)}
+        aria-label="Eliminar producto"
         className="p-3 bg-white/5 hover:bg-rose-500/10 rounded-2xl text-slate-400 hover:text-rose-500 transition-all"
       >
         <Trash2 size={18} />
@@ -221,9 +223,10 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
                   </span>
                 )}
                  <div className="flex gap-2">
-                    <button className="p-2 bg-white/5 rounded-xl text-slate-400"><History size={16}/></button>
+                    <button aria-label="Ver historial" className="p-2 bg-white/5 rounded-xl text-slate-400"><History size={16}/></button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); onDeleteItem(item.id); }}
+                      aria-label="Eliminar producto"
                       className="p-2 bg-rose-500/10 rounded-xl text-rose-500 active:scale-95"
                     >
                       <Trash2 size={16}/>
