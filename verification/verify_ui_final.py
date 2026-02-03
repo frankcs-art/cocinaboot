@@ -13,6 +13,16 @@ def run_verification():
             page.goto("http://localhost:3000", timeout=60000)
             print("Page loaded. Waiting for content...")
 
+            # Wait for either main or the login button
+            try:
+                page.wait_for_selector("main", timeout=5000)
+            except:
+                print("Main not found, checking for login button...")
+                login_button = page.get_by_role("button", name="Continuar con Google")
+                if login_button.is_visible():
+                    print("Clicking login button...")
+                    login_button.click()
+
             # Wait for main container
             page.wait_for_selector("main", timeout=30000)
             time.sleep(10) # extra wait for vite
