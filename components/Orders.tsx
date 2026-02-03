@@ -50,10 +50,14 @@ export const Orders: React.FC<OrdersProps> = ({ suppliers, suggestion, onClearSu
                 <Sparkles className="text-emerald-400" size={24} />
                 <h4 className="text-xl md:text-3xl font-black text-white">Plan de Abastecimiento</h4>
               </div>
-              <button onClick={onClearSuggestion} className="p-2 md:p-4 bg-white/5 hover:bg-white/10 rounded-full transition-all text-slate-500 hover:text-white">✕</button>
+              <button
+                onClick={onClearSuggestion}
+                className="p-2 md:p-4 bg-white/5 hover:bg-white/10 rounded-full transition-all text-slate-500 hover:text-white"
+                aria-label="Cerrar sugerencia"
+              >✕</button>
            </div>
-           <div className="prose prose-invert max-w-none bg-black/40 p-5 md:p-10 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/5 shadow-inner leading-relaxed text-slate-300 font-medium overflow-y-auto max-h-[300px] md:max-h-[500px] custom-scrollbar text-xs md:text-base">
-              <div dangerouslySetInnerHTML={{ __html: suggestion.replace(/\n/g, '<br/>') }}></div>
+           <div className="prose prose-invert max-w-none bg-black/40 p-5 md:p-10 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/5 shadow-inner leading-relaxed text-slate-300 font-medium overflow-y-auto max-h-[300px] md:max-h-[500px] custom-scrollbar text-xs md:text-base whitespace-pre-wrap">
+              {suggestion}
            </div>
            <div className="mt-6 md:mt-10 flex flex-col sm:flex-row gap-3 md:gap-6">
               <button 

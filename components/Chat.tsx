@@ -40,7 +40,13 @@ export const Chat: React.FC<ChatProps> = ({ messages, onSend, isLoading, isThink
            <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
            <div className="flex items-center gap-2 md:gap-4">
               <span className="text-[8px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest">IA Pro</span>
-              <button onClick={() => setIsThinking(!isThinking)} className={`w-10 md:w-14 h-5 md:h-7 rounded-full relative transition-all duration-300 ${isThinking ? 'bg-emerald-500' : 'bg-slate-800'}`}>
+              <button
+                onClick={() => setIsThinking(!isThinking)}
+                className={`w-10 md:w-14 h-5 md:h-7 rounded-full relative transition-all duration-300 ${isThinking ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                role="switch"
+                aria-checked={isThinking}
+                aria-label="Cambiar a IA Pro"
+              >
                 <div className={`absolute top-0.5 md:top-1 w-4 md:w-5 h-4 md:h-5 bg-white rounded-full transition-all shadow-lg ${isThinking ? 'left-5 md:left-8' : 'left-0.5 md:left-1'}`} />
               </button>
            </div>
