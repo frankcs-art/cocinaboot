@@ -55,12 +55,14 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
       <button 
         onClick={() => onSelect(item)}
         className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all mr-3"
+        aria-label="Ver historial"
       >
         <Clock size={18} />
       </button>
       <button 
         onClick={() => onDelete(item.id)}
         className="p-3 bg-white/5 hover:bg-rose-500/10 rounded-2xl text-slate-400 hover:text-rose-500 transition-all"
+        aria-label="Eliminar producto"
       >
         <Trash2 size={18} />
       </button>
@@ -221,10 +223,16 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
                   </span>
                 )}
                  <div className="flex gap-2">
-                    <button className="p-2 bg-white/5 rounded-xl text-slate-400"><History size={16}/></button>
+                    <button
+                      className="p-2 bg-white/5 rounded-xl text-slate-400"
+                      aria-label="Ver historial"
+                    >
+                      <History size={16}/>
+                    </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); onDeleteItem(item.id); }}
                       className="p-2 bg-rose-500/10 rounded-xl text-rose-500 active:scale-95"
+                      aria-label="Eliminar producto"
                     >
                       <Trash2 size={16}/>
                     </button>

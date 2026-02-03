@@ -70,7 +70,12 @@ export const Usage: React.FC<UsageProps> = ({ usage, inventory, onRecordUsage })
         <div className="lg:col-span-2 space-y-4 md:space-y-6">
            <div className="flex items-center justify-between px-2">
               <h3 className="text-xl md:text-2xl font-black text-white">Historial de Flujos</h3>
-              <button className="p-2.5 bg-white/5 rounded-xl text-slate-500"><Filter size={16}/></button>
+              <button
+                className="p-2.5 bg-white/5 rounded-xl text-slate-500"
+                aria-label="Filtrar historial"
+              >
+                <Filter size={16}/>
+              </button>
            </div>
            
            <div className="bg-zinc-900/50 border border-white/5 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden">
