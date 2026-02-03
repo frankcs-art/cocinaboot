@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Bell, Search, Menu, Settings, X
 } from 'lucide-react';
@@ -48,6 +48,37 @@ function App() {
     unreadNotifications: notifications.filter(n => !n.isRead).length
   }), [inventory, notifications]);
 
+  // Optimized Coverage Calculation (O(N+M))
+  // We pre-group usage by itemId to avoid O(N*M) complexity in rendering and notifications
+  const coverageData = useMemo(() => {
+    const usageByItem: Record<string, { total: number; days: Set<string> }> = {};
+    usage.forEach(u => {
+      if (u.type !== 'Consumo') return;
+      if (!usageByItem[u.itemId]) usageByItem[u.itemId] = { total: 0, days: new Set() };
+      usageByItem[u.itemId].total += u.quantityConsumed;
+      usageByItem[u.itemId].days.add(u.date);
+    });
+
+    const data: Record<string, number> = {};
+    inventory.forEach(item => {
+      const stats = usageByItem[item.id];
+      if (!stats || stats.days.size === 0) {
+        data[item.id] = 999; // Default for no usage
+        return;
+      }
+      const uniqueDays = stats.days.size;
+      let cpd = uniqueDays > 0 ? stats.total / uniqueDays : stats.total;
+
+      // Event Adjustment: +30% CPD for perishables during High Demand
+      if (isHighDemand && item.isPerishable) {
+        cpd = cpd * 1.3;
+      }
+
+      data[item.id] = cpd > 0 ? item.quantity / cpd : 999;
+    });
+    return data;
+  }, [inventory, usage, isHighDemand]);
+
   // Sync notifications with inventory (Coverage Alerts + Min Threshold)
   useEffect(() => {
     const alerts: AppNotification[] = [];
@@ -65,41 +96,27 @@ function App() {
         });
       }
 
-      // 2. Time Coverage Check (CPD Based)
-      const itemUsage = usage.filter(u => u.itemId === item.id && u.type === 'Consumo');
-      if (itemUsage.length > 0) {
-        const uniqueDays = new Set(itemUsage.map(u => u.date)).size;
-        const totalConsumed = itemUsage.reduce((acc, u) => acc + u.quantityConsumed, 0);
-        let cpd = uniqueDays > 0 ? totalConsumed / uniqueDays : totalConsumed;
+      // 2. Time Coverage Check (Optimized O(N) lookup)
+      const coverageDays = coverageData[item.id];
 
-        // Ajuste de Eventos: +30% CPD para perecederos en Alta Demanda
-        if (isHighDemand && item.isPerishable) {
-          cpd = cpd * 1.3;
-        }
-
-        if (cpd > 0) {
-          const coverageHours = (item.quantity / cpd) * 24;
-
-          if (coverageHours < 12) {
-            alerts.push({
-              id: `alert-critical-time-${item.id}`,
-              type: 'critical',
-              title: '🔴 CRÍTICO: <12h',
-              message: `El producto ${item.name} se agotará en menos de 12 horas (${coverageHours.toFixed(1)}h).`,
-              timestamp: new Date().toISOString(),
-              isRead: false
-            });
-          } else if (coverageHours < 48) {
-            alerts.push({
-              id: `alert-warning-time-${item.id}`,
-              type: 'warning',
-              title: '🟡 REABASTECER: <48h',
-              message: `Stock de ${item.name} cubre menos de 48 horas (${(coverageHours/24).toFixed(1)}d).`,
-              timestamp: new Date().toISOString(),
-              isRead: false
-            });
-          }
-        }
+      if (coverageDays < 0.5) { // 12 hours = 0.5 days
+        alerts.push({
+          id: `alert-critical-time-${item.id}`,
+          type: 'critical',
+          title: '🔴 CRÍTICO: <12h',
+          message: `El producto ${item.name} se agotará en menos de 12 horas (${(coverageDays * 24).toFixed(1)}h).`,
+          timestamp: new Date().toISOString(),
+          isRead: false
+        });
+      } else if (coverageDays < 2) { // 48 hours = 2 days
+        alerts.push({
+          id: `alert-warning-time-${item.id}`,
+          type: 'warning',
+          title: '🟡 REABASTECER: <48h',
+          message: `Stock de ${item.name} cubre menos de 48 horas (${coverageDays.toFixed(1)}d).`,
+          timestamp: new Date().toISOString(),
+          isRead: false
+        });
       }
     });
     setNotifications(prev => {
@@ -107,7 +124,7 @@ function App() {
       const newAlerts = alerts.filter(a => !existingIds.has(a.id));
       return [...newAlerts, ...prev];
     });
-  }, [inventory, isHighDemand, usage]);
+  }, [inventory, coverageData]);
 
   // Al cargar la app
   useEffect(() => {
@@ -163,7 +180,7 @@ function App() {
     }
   }, [chatMessages]);
 
-  const recordUsage = (itemId: string, quantity: number, type: 'Consumo' | 'Merma' = 'Consumo') => {
+  const recordUsage = useCallback((itemId: string, quantity: number, type: 'Consumo' | 'Merma' = 'Consumo') => {
     const item = inventory.find(i => i.id === itemId);
     if (!item || quantity <= 0) {
       console.warn('⚠️ Invalid usage record:', { itemId, quantity });
@@ -202,12 +219,10 @@ function App() {
     };
     setUsage(prev => [newEntry, ...prev]);
     StorageService.recordUsage(newEntry);
-  };
+  }, [inventory]);
 
-  const addStock = (itemId: string, quantity: number, location?: string) => {
-    const item = inventory.find(i => i.id === itemId);
-    if (!item || quantity <= 0) return;
-
+  const addStock = useCallback((itemId: string, quantity: number, location?: string) => {
+    if (quantity <= 0) return;
     setInventory(prev => prev.map(i => i.id === itemId ? {
       ...i,
       quantity: i.quantity + quantity,
@@ -215,13 +230,13 @@ function App() {
       lastUpdated: new Date().toISOString(),
       batchInfo: [...(i.batchInfo || []), { entryDate: new Date().toISOString(), quantity }]
     } : i));
-  };
+  }, []);
 
-  const deleteInventoryItem = (itemId: string) => {
+  const deleteInventoryItem = useCallback((itemId: string) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este producto?')) {
       setInventory(prev => prev.filter(i => i.id !== itemId));
     }
-  };
+  }, []);
 
   const getDailySuggestion = async () => {
     setIsLoading(true);
@@ -368,7 +383,7 @@ function App() {
             </div>
           }>
             {activeTab === 'dashboard' && <Dashboard stats={stats} inventory={inventory} getDailySuggestion={getDailySuggestion} isLoading={isLoading} setTab={handleTabChange} isHighDemand={isHighDemand} setIsHighDemand={setIsHighDemand} />}
-            {activeTab === 'inventory' && <Inventory inventory={inventory} usageHistory={usage} searchTerm={searchTerm} onRecordUsage={recordUsage} onAddStock={addStock} onDeleteItem={deleteInventoryItem} isHighDemand={isHighDemand} />}
+            {activeTab === 'inventory' && <Inventory inventory={inventory} coverageData={coverageData} searchTerm={searchTerm} onRecordUsage={recordUsage} onAddStock={addStock} onDeleteItem={deleteInventoryItem} isHighDemand={isHighDemand} />}
             {activeTab === 'orders' && <Orders suppliers={SUPPLIERS} suggestion={aiSuggestion} onClearSuggestion={() => setAiSuggestion(null)} getDailySuggestion={getDailySuggestion} onConfirmOrder={confirmOrder} isLoading={isLoading} />}
             {activeTab === 'chat' && <Chat messages={chatMessages} onSend={onChatSend} isLoading={isLoading} isThinking={isThinking} setIsThinking={setIsThinking} />}
             {activeTab === 'scan' && <Scanner />}
