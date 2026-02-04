@@ -316,7 +316,11 @@ function App() {
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
           <aside className="absolute left-0 top-0 bottom-0 w-72 bg-[#09090b] border-r border-white/10 flex flex-col animate-in slide-in-from-left duration-300">
             <div className="flex justify-end p-4">
-              <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white p-2">
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-slate-400 hover:text-white p-2"
+                aria-label="Cerrar menú"
+              >
                 <X size={24} />
               </button>
             </div>
@@ -331,6 +335,7 @@ function App() {
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="p-2 lg:hidden text-slate-400 hover:text-white transition-colors"
+              aria-label="Abrir menú"
             >
               <Menu size={24} />
             </button>
@@ -343,6 +348,7 @@ function App() {
               <input
                 type="text"
                 placeholder="Buscar..."
+                aria-label="Buscar productos"
                 className="bg-white/5 border border-white/10 pl-12 pr-6 py-2 rounded-2xl text-sm w-40 md:w-80 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-slate-300 placeholder:text-slate-600"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)} />
@@ -350,6 +356,7 @@ function App() {
             <button
               onClick={() => setActiveTab('notifications')}
               className={`p-2.5 md:p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all relative ${activeTab === 'notifications' ? 'border-emerald-500/50 bg-emerald-500/5 text-emerald-400' : ''}`}
+              aria-label="Ver notificaciones"
             >
               <Bell size={20} />
               {stats.unreadNotifications > 0 && (
