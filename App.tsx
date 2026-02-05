@@ -48,6 +48,38 @@ function App() {
     unreadNotifications: notifications.filter(n => !n.isRead).length
   }), [inventory, notifications]);
 
+  // Optimized coverage calculation O(N+M)
+  const coverageData = useMemo(() => {
+    const data: Record<string, number> = {};
+    const usageByItem: Record<string, { total: number, days: Set<string> }> = {};
+
+    // O(M) - Group usage by item
+    usage.forEach(u => {
+      if (u.type !== 'Consumo') return;
+      if (!usageByItem[u.itemId]) {
+        usageByItem[u.itemId] = { total: 0, days: new Set() };
+      }
+      usageByItem[u.itemId].total += u.quantityConsumed;
+      usageByItem[u.itemId].days.add(u.date);
+    });
+
+    // O(N) - Calculate coverage for each item
+    inventory.forEach(item => {
+      const itemUsage = usageByItem[item.id];
+      if (!itemUsage) {
+        data[item.id] = 999;
+        return;
+      }
+
+      const uniqueDays = itemUsage.days.size;
+      const cpd = uniqueDays > 0 ? itemUsage.total / uniqueDays : itemUsage.total;
+      const adjustedCpd = (isHighDemand && item.isPerishable) ? cpd * 1.3 : cpd;
+
+      data[item.id] = adjustedCpd > 0 ? item.quantity / adjustedCpd : 999;
+    });
+    return data;
+  }, [inventory, usage, isHighDemand]);
+
   // Sync notifications with inventory (Coverage Alerts + Min Threshold)
   useEffect(() => {
     const alerts: AppNotification[] = [];
@@ -65,40 +97,29 @@ function App() {
         });
       }
 
-      // 2. Time Coverage Check (CPD Based)
-      const itemUsage = usage.filter(u => u.itemId === item.id && u.type === 'Consumo');
-      if (itemUsage.length > 0) {
-        const uniqueDays = new Set(itemUsage.map(u => u.date)).size;
-        const totalConsumed = itemUsage.reduce((acc, u) => acc + u.quantityConsumed, 0);
-        let cpd = uniqueDays > 0 ? totalConsumed / uniqueDays : totalConsumed;
+      // 2. Time Coverage Check (using pre-calculated coverageData)
+      const coverage = coverageData[item.id];
+      if (coverage !== undefined && coverage < 999) {
+        const coverageHours = coverage * 24;
 
-        // Ajuste de Eventos: +30% CPD para perecederos en Alta Demanda
-        if (isHighDemand && item.isPerishable) {
-          cpd = cpd * 1.3;
-        }
-
-        if (cpd > 0) {
-          const coverageHours = (item.quantity / cpd) * 24;
-
-          if (coverageHours < 12) {
-            alerts.push({
-              id: `alert-critical-time-${item.id}`,
-              type: 'critical',
-              title: '🔴 CRÍTICO: <12h',
-              message: `El producto ${item.name} se agotará en menos de 12 horas (${coverageHours.toFixed(1)}h).`,
-              timestamp: new Date().toISOString(),
-              isRead: false
-            });
-          } else if (coverageHours < 48) {
-            alerts.push({
-              id: `alert-warning-time-${item.id}`,
-              type: 'warning',
-              title: '🟡 REABASTECER: <48h',
-              message: `Stock de ${item.name} cubre menos de 48 horas (${(coverageHours/24).toFixed(1)}d).`,
-              timestamp: new Date().toISOString(),
-              isRead: false
-            });
-          }
+        if (coverageHours < 12) {
+          alerts.push({
+            id: `alert-critical-time-${item.id}`,
+            type: 'critical',
+            title: '🔴 CRÍTICO: <12h',
+            message: `El producto ${item.name} se agotará en menos de 12 horas (${coverageHours.toFixed(1)}h).`,
+            timestamp: new Date().toISOString(),
+            isRead: false
+          });
+        } else if (coverageHours < 48) {
+          alerts.push({
+            id: `alert-warning-time-${item.id}`,
+            type: 'warning',
+            title: '🟡 REABASTECER: <48h',
+            message: `Stock de ${item.name} cubre menos de 48 horas (${(coverageHours/24).toFixed(1)}d).`,
+            timestamp: new Date().toISOString(),
+            isRead: false
+          });
         }
       }
     });
@@ -107,7 +128,7 @@ function App() {
       const newAlerts = alerts.filter(a => !existingIds.has(a.id));
       return [...newAlerts, ...prev];
     });
-  }, [inventory, isHighDemand, usage]);
+  }, [inventory, isHighDemand, coverageData]);
 
   // Al cargar la app
   useEffect(() => {
@@ -368,7 +389,7 @@ function App() {
             </div>
           }>
             {activeTab === 'dashboard' && <Dashboard stats={stats} inventory={inventory} getDailySuggestion={getDailySuggestion} isLoading={isLoading} setTab={handleTabChange} isHighDemand={isHighDemand} setIsHighDemand={setIsHighDemand} />}
-            {activeTab === 'inventory' && <Inventory inventory={inventory} usageHistory={usage} searchTerm={searchTerm} onRecordUsage={recordUsage} onAddStock={addStock} onDeleteItem={deleteInventoryItem} isHighDemand={isHighDemand} />}
+            {activeTab === 'inventory' && <Inventory inventory={inventory} searchTerm={searchTerm} onRecordUsage={recordUsage} onAddStock={addStock} onDeleteItem={deleteInventoryItem} isHighDemand={isHighDemand} coverageData={coverageData} />}
             {activeTab === 'orders' && <Orders suppliers={SUPPLIERS} suggestion={aiSuggestion} onClearSuggestion={() => setAiSuggestion(null)} getDailySuggestion={getDailySuggestion} onConfirmOrder={confirmOrder} isLoading={isLoading} />}
             {activeTab === 'chat' && <Chat messages={chatMessages} onSend={onChatSend} isLoading={isLoading} isThinking={isThinking} setIsThinking={setIsThinking} />}
             {activeTab === 'scan' && <Scanner />}

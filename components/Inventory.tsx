@@ -5,12 +5,12 @@ import { CATEGORY_THEMES } from '../constants';
 
 interface InventoryProps {
   inventory: InventoryItem[];
-  usageHistory: UsageHistory[];
   searchTerm: string;
   onRecordUsage: (itemId: string, quantity: number) => void;
   onAddStock: (itemId: string, quantity: number, location: string) => void;
   onDeleteItem: (itemId: string) => void;
   isHighDemand: boolean;
+  coverageData: Record<string, number>;
 }
 
 const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: any; onDelete: (id: string) => void }> = ({ item, coverage, onSelect, onDelete }) => (
@@ -68,7 +68,7 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
   </tr>
 );
 
-export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, searchTerm, onRecordUsage, onAddStock, onDeleteItem, isHighDemand }) => {
+export const Inventory: React.FC<InventoryProps> = ({ inventory, searchTerm, onRecordUsage, onAddStock, onDeleteItem, isHighDemand, coverageData }) => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [usageValue, setUsageValue] = useState(1);
   const [filterCategory, setFilterCategory] = useState<string>('All');
@@ -79,23 +79,6 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
     return ['All', ...Array.from(cats)];
   }, [inventory]);
 
-  const coverageData = useMemo(() => {
-    const data: Record<string, number> = {};
-    inventory.forEach(item => {
-      const itemUsage = usageHistory.filter(u => u.itemId === item.id && u.type === 'Consumo');
-      if (itemUsage.length === 0) {
-        data[item.id] = 999;
-        return;
-      }
-      const uniqueDays = new Set(itemUsage.map(u => u.date)).size;
-      const totalConsumed = itemUsage.reduce((acc, u) => acc + u.quantityConsumed, 0);
-      let cpd = uniqueDays > 0 ? totalConsumed / uniqueDays : totalConsumed;
-
-      if (isHighDemand && item.isPerishable) cpd *= 1.3;
-      data[item.id] = cpd > 0 ? item.quantity / cpd : 999;
-    });
-    return data;
-  }, [inventory, usageHistory, isHighDemand]);
 
   const processedInventory = useMemo(() => {
     let result = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
