@@ -46,7 +46,7 @@ def run_verification():
             # 4. Chat
             page.get_by_role("button", name="Asistente IA").click()
             time.sleep(3)
-            page.fill("input[placeholder='Escribe un mensaje...']", "Jules, muestra el protocolo de comunicación")
+            page.fill("input[placeholder='Consulta...']", "Jules, muestra el protocolo de comunicación")
             page.keyboard.press("Enter")
             time.sleep(15) # Wait for AI response
             page.screenshot(path="verification/04_chat.png")

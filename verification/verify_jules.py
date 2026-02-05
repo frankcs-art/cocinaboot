@@ -15,23 +15,32 @@ def verify_jules():
             except:
                 time.sleep(2)
 
+        # Handle login if necessary
+        try:
+            page.wait_for_selector("main", timeout=5000)
+        except:
+            login_button = page.get_by_role("button", name="Continuar con Google")
+            if login_button.is_visible():
+                login_button.click()
+                page.wait_for_selector("main", timeout=10000)
+
         # 1. Dashboard & High Demand Toggle
         page.screenshot(path="verification/01_dashboard.png")
 
         # 2. Inventory Traffic Lights
-        page.get_by_role("button", name="INVENTARIO").click()
+        page.get_by_role("button", name="Inventario").click()
         page.wait_for_selector("table")
         page.screenshot(path="verification/02_inventory.png")
 
         # 3. Usage Dual Registration
-        page.get_by_role("button", name="CONSUMO DIARIO").click()
+        page.get_by_role("button", name="Consumo Diario").click()
         page.wait_for_selector("select")
         page.screenshot(path="verification/03_usage.png")
 
         # 4. Chat Jules Protocol
-        page.get_by_role("button", name="ASISTENTE IA").click()
-        page.wait_for_selector("textarea, input[placeholder*='mensaje']")
-        chat_input = page.get_by_placeholder("Escribe un mensaje...")
+        page.get_by_role("button", name="Asistente IA").click()
+        page.wait_for_selector("input[placeholder='Consulta...']")
+        chat_input = page.get_by_placeholder("Consulta...")
         chat_input.fill("Jules, dame el estado del Jamón Ibérico")
         chat_input.press("Enter")
         time.sleep(5) # Wait for AI response
