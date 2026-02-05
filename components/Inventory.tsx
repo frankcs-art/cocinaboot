@@ -55,12 +55,14 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
       <button 
         onClick={() => onSelect(item)}
         className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all mr-3"
+        aria-label="Ver historial de uso"
       >
         <Clock size={18} />
       </button>
       <button 
         onClick={() => onDelete(item.id)}
         className="p-3 bg-white/5 hover:bg-rose-500/10 rounded-2xl text-slate-400 hover:text-rose-500 transition-all"
+        aria-label="Eliminar producto"
       >
         <Trash2 size={18} />
       </button>
@@ -221,10 +223,16 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
                   </span>
                 )}
                  <div className="flex gap-2">
-                    <button className="p-2 bg-white/5 rounded-xl text-slate-400"><History size={16}/></button>
+                    <button
+                      className="p-2 bg-white/5 rounded-xl text-slate-400"
+                      aria-label="Ver historial"
+                    >
+                      <History size={16}/>
+                    </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); onDeleteItem(item.id); }}
                       className="p-2 bg-rose-500/10 rounded-xl text-rose-500 active:scale-95"
+                      aria-label="Eliminar producto"
                     >
                       <Trash2 size={16}/>
                     </button>
@@ -240,7 +248,13 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
           <div className="bg-zinc-950 border-t sm:border border-white/20 w-full max-w-md rounded-t-[2.5rem] sm:rounded-[3rem] p-8 md:p-10 shadow-3xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-500">
             <div className="flex justify-between items-center mb-6 md:mb-8">
                <h4 className="text-xl md:text-2xl font-black text-white">Registrar Consumo</h4>
-               <button onClick={() => setSelectedItem(null)} className="text-slate-600 hover:text-white transition-colors p-1"><X size={24}/></button>
+               <button
+                onClick={() => setSelectedItem(null)}
+                className="text-slate-600 hover:text-white transition-colors p-1"
+                aria-label="Cerrar"
+               >
+                <X size={24}/>
+               </button>
             </div>
             <div className="space-y-6 md:space-y-8">
                <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl md:rounded-3xl border border-white/20">
@@ -264,6 +278,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
                     <button 
                       onClick={() => setUsageValue(prev => Math.max(1, prev - 1))}
                       className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white active:scale-90"
+                      aria-label="Disminuir cantidad"
                     >
                       <Minus size={20} />
                     </button>
@@ -276,6 +291,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
                     <button 
                       onClick={() => setUsageValue(prev => prev + 1)}
                       className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white active:scale-90"
+                      aria-label="Aumentar cantidad"
                     >
                       <Plus size={20} />
                     </button>
