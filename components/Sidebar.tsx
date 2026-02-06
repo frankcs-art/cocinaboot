@@ -64,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, user, 
             onClick={onLogout}
             className="text-slate-600 hover:text-rose-400 transition-colors p-1"
             title="Cerrar sesión"
+            aria-label="Cerrar sesión"
           >
             <LogOut size={16} />
           </button>

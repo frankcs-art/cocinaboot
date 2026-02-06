@@ -40,7 +40,13 @@ export const Chat: React.FC<ChatProps> = ({ messages, onSend, isLoading, isThink
            <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
            <div className="flex items-center gap-2 md:gap-4">
               <span className="text-[8px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest">IA Pro</span>
-              <button onClick={() => setIsThinking(!isThinking)} className={`w-10 md:w-14 h-5 md:h-7 rounded-full relative transition-all duration-300 ${isThinking ? 'bg-emerald-500' : 'bg-slate-800'}`}>
+              <button
+                onClick={() => setIsThinking(!isThinking)}
+                className={`w-10 md:w-14 h-5 md:h-7 rounded-full relative transition-all duration-300 ${isThinking ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                role="switch"
+                aria-checked={isThinking}
+                aria-label="IA Pro"
+              >
                 <div className={`absolute top-0.5 md:top-1 w-4 md:w-5 h-4 md:h-5 bg-white rounded-full transition-all shadow-lg ${isThinking ? 'left-5 md:left-8' : 'left-0.5 md:left-1'}`} />
               </button>
            </div>
@@ -75,12 +81,17 @@ export const Chat: React.FC<ChatProps> = ({ messages, onSend, isLoading, isThink
       <form onSubmit={(e) => { e.preventDefault(); if(input.trim() && !isLoading) { onSend(input); setInput(''); } }} className="p-4 md:p-10 bg-black/40 border-t border-white/5 flex gap-3 md:gap-6">
         <input 
           type="text" 
-          placeholder="Consulta..." 
+          placeholder="Escribe un mensaje..."
           className="flex-1 bg-white/5 border border-white/10 rounded-xl md:rounded-3xl px-4 md:px-8 py-3 md:py-5 outline-none font-bold text-sm md:text-lg focus:ring-2 focus:ring-emerald-500/20 text-slate-200 placeholder:text-slate-700 transition-all" 
           value={input} 
           onChange={(e) => setInput(e.target.value)} 
         />
-        <button type="submit" disabled={isLoading} className="w-12 md:w-20 bg-emerald-500 text-black rounded-xl md:rounded-3xl hover:bg-emerald-400 transition-all shadow-2xl flex items-center justify-center active:scale-90 disabled:opacity-50 shrink-0">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-12 md:w-20 bg-emerald-500 text-black rounded-xl md:rounded-3xl hover:bg-emerald-400 transition-all shadow-2xl flex items-center justify-center active:scale-90 disabled:opacity-50 shrink-0"
+          aria-label="Enviar mensaje"
+        >
           <Send className="w-5 h-5 md:w-7 md:h-7" />
         </button>
       </form>
