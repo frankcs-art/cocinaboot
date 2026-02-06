@@ -5,7 +5,7 @@ import { CATEGORY_THEMES } from '../constants';
 
 interface InventoryProps {
   inventory: InventoryItem[];
-  usageHistory: UsageHistory[];
+  coverageData: Record<string, { cpd: number; coverage: number }>;
   searchTerm: string;
   onRecordUsage: (itemId: string, quantity: number) => void;
   onAddStock: (itemId: string, quantity: number, location: string) => void;
@@ -13,7 +13,7 @@ interface InventoryProps {
   isHighDemand: boolean;
 }
 
-const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: any; onDelete: (id: string) => void }> = ({ item, coverage, onSelect, onDelete }) => (
+const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: any; onDelete: (id: string) => void }> = React.memo(({ item, coverage, onSelect, onDelete }) => (
   <tr className="hover:bg-white/2 transition-colors group">
     <td className="px-14 py-12">
       <div className="flex items-center gap-4">
@@ -68,9 +68,9 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
       </button>
     </td>
   </tr>
-);
+));
 
-export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, searchTerm, onRecordUsage, onAddStock, onDeleteItem, isHighDemand }) => {
+export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, searchTerm, onRecordUsage, onAddStock, onDeleteItem, isHighDemand }) => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [usageValue, setUsageValue] = useState(1);
   const [filterCategory, setFilterCategory] = useState<string>('All');
@@ -80,24 +80,6 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
     const cats = new Set(inventory.map(i => i.category));
     return ['All', ...Array.from(cats)];
   }, [inventory]);
-
-  const coverageData = useMemo(() => {
-    const data: Record<string, number> = {};
-    inventory.forEach(item => {
-      const itemUsage = usageHistory.filter(u => u.itemId === item.id && u.type === 'Consumo');
-      if (itemUsage.length === 0) {
-        data[item.id] = 999;
-        return;
-      }
-      const uniqueDays = new Set(itemUsage.map(u => u.date)).size;
-      const totalConsumed = itemUsage.reduce((acc, u) => acc + u.quantityConsumed, 0);
-      let cpd = uniqueDays > 0 ? totalConsumed / uniqueDays : totalConsumed;
-
-      if (isHighDemand && item.isPerishable) cpd *= 1.3;
-      data[item.id] = cpd > 0 ? item.quantity / cpd : 999;
-    });
-    return data;
-  }, [inventory, usageHistory, isHighDemand]);
 
   const processedInventory = useMemo(() => {
     let result = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -180,7 +162,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
             </thead>
             <tbody className="">
               {processedInventory.map(item => (
-                <InventoryRow key={item.id} item={item} coverage={coverageData[item.id]} onSelect={setSelectedItem} onDelete={onDeleteItem} />
+                <InventoryRow key={item.id} item={item} coverage={coverageData[item.id]?.coverage ?? 999} onSelect={setSelectedItem} onDelete={onDeleteItem} />
               ))}
             </tbody>
           </table>
@@ -205,15 +187,15 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, usageHistory, s
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-lg font-black text-white">{item.quantity} <span className="text-slate-500 font-medium text-xs uppercase tracking-tight">{item.unit}</span></p>
-                  {coverageData[item.id] < 999 && <p className="text-[9px] font-bold text-slate-500 mt-1">{coverageData[item.id].toFixed(1)} días</p>}
+                    {(coverageData[item.id]?.coverage ?? 999) < 999 && <p className="text-[9px] font-bold text-slate-500 mt-1">{(coverageData[item.id]?.coverage ?? 999).toFixed(1)} días</p>}
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                {coverageData[item.id] < 0.5 ? (
+                  {(coverageData[item.id]?.coverage ?? 999) < 0.5 ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase rounded-lg border border-rose-500/20">
                      <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div> 🔴 CRÍTICO
                   </span>
-                ) : coverageData[item.id] < 2 ? (
+                  ) : (coverageData[item.id]?.coverage ?? 999) < 2 ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase rounded-lg border border-yellow-500/20">
                      <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> 🟡 REABASTECER
                   </span>
