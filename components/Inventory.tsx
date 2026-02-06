@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Filter, ArrowUpDown, PlusCircle, History, Trash2, Minus, X, Clock } from 'lucide-react';
+import { Plus, Filter, ArrowUpDown, PlusCircle, History, Trash2, Minus, X, Clock, Search } from 'lucide-react';
 import { InventoryItem, UsageHistory } from '../types';
 import { CATEGORY_THEMES } from '../constants';
 
@@ -119,6 +119,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
               <div className="flex items-center gap-2 bg-white/5 px-3 md:px-4 py-2.5 rounded-xl border border-white/20">
                 <Filter size={14} className="text-slate-500 shrink-0" />
                 <select 
+                  aria-label="Filtrar por categoría"
                   className="bg-transparent text-slate-300 text-[10px] md:text-xs font-bold outline-none cursor-pointer w-full"
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
@@ -130,6 +131,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
               <div className="flex items-center gap-2 bg-white/5 px-3 md:px-4 py-2.5 rounded-xl border border-white/20">
                 <ArrowUpDown size={14} className="text-slate-500 shrink-0" />
                 <select 
+                  aria-label="Ordenar por"
                   className="bg-transparent text-slate-300 text-[10px] md:text-xs font-bold outline-none cursor-pointer w-full"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
@@ -151,60 +153,69 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
         </div>
 
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-separate border-spacing-y-4">
-            <thead>
-              <tr className="bg-white/2">
-                <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest">Producto</th>
-                <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">Stock / Cobertura</th>
-                <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest">Estatus</th>
-                <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="">
-              {processedInventory.map(item => (
-                <InventoryRow key={item.id} item={item} coverage={coverageData[item.id]?.coverage ?? 999} onSelect={setSelectedItem} onDelete={onDeleteItem} />
-              ))}
-            </tbody>
-          </table>
+          {processedInventory.length > 0 ? (
+            <table className="w-full text-left border-separate border-spacing-y-4">
+              <thead>
+                <tr className="bg-white/2">
+                  <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest">Producto</th>
+                  <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">Stock / Cobertura</th>
+                  <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest">Estatus</th>
+                  <th className="px-14 py-6 text-[10px] font-black text-slate-600 uppercase tracking-widest text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="">
+                {processedInventory.map(item => (
+                  <InventoryRow key={item.id} item={item} coverage={coverageData[item.id]?.coverage ?? 999} onSelect={setSelectedItem} onDelete={onDeleteItem} />
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="py-20 text-center">
+              <Search size={48} className="mx-auto text-slate-800 mb-4 opacity-20" />
+              <p className="text-slate-500 font-bold text-lg">No se encontraron productos</p>
+              <p className="text-slate-600 text-sm mt-1">Prueba con otro término o ajusta los filtros.</p>
+            </div>
+          )}
         </div>
 
         <div className="md:hidden divide-y divide-white/20">
-          {processedInventory.map(item => (
-            <div key={item.id} className="p-5 space-y-4 hover:bg-white/2 transition-colors group active:bg-white/5" onClick={() => setSelectedItem(item)}>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-lg font-black shrink-0 overflow-hidden ${CATEGORY_THEMES[item.category] || CATEGORY_THEMES.Default}`}>
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                    ) : (
-                      item.name[0]
-                    )}
+          {processedInventory.length > 0 ? (
+            processedInventory.map(item => (
+              <div key={item.id} className="p-5 space-y-4 hover:bg-white/2 transition-colors group active:bg-white/5" onClick={() => setSelectedItem(item)}>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-lg font-black shrink-0 overflow-hidden ${CATEGORY_THEMES[item.category] || CATEGORY_THEMES.Default}`}>
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        item.name[0]
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-black text-white text-base leading-tight truncate">{item.name}</p>
+                      <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-1">{item.category} • {item.location}</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-black text-white text-base leading-tight truncate">{item.name}</p>
-                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-1">{item.category} • {item.location}</p>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-lg font-black text-white">{item.quantity} <span className="text-slate-500 font-medium text-xs uppercase tracking-tight">{item.unit}</span></p>
+                  <div className="text-right shrink-0">
+                    <p className="text-lg font-black text-white">{item.quantity} <span className="text-slate-500 font-medium text-xs uppercase tracking-tight">{item.unit}</span></p>
                     {(coverageData[item.id]?.coverage ?? 999) < 999 && <p className="text-[9px] font-bold text-slate-500 mt-1">{(coverageData[item.id]?.coverage ?? 999).toFixed(1)} días</p>}
+                  </div>
                 </div>
-              </div>
-              <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center">
                   {(coverageData[item.id]?.coverage ?? 999) < 0.5 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase rounded-lg border border-rose-500/20">
-                     <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div> 🔴 CRÍTICO
-                  </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase rounded-lg border border-rose-500/20">
+                      <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div> 🔴 CRÍTICO
+                    </span>
                   ) : (coverageData[item.id]?.coverage ?? 999) < 2 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase rounded-lg border border-yellow-500/20">
-                     <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> 🟡 REABASTECER
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase rounded-lg border border-emerald-500/20">
-                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> 🟢 ÓPTIMO
-                  </span>
-                )}
-                 <div className="flex gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase rounded-lg border border-yellow-500/20">
+                      <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> 🟡 REABASTECER
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase rounded-lg border border-emerald-500/20">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> 🟢 ÓPTIMO
+                    </span>
+                  )}
+                  <div className="flex gap-2">
                     <button
                       className="p-2 bg-white/5 rounded-xl text-slate-400"
                       aria-label="Ver historial"
@@ -218,10 +229,16 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
                     >
                       <Trash2 size={16}/>
                     </button>
-                 </div>
+                  </div>
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="py-12 text-center">
+              <Search size={32} className="mx-auto text-slate-800 mb-3 opacity-20" />
+              <p className="text-slate-500 font-bold">Sin resultados</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 
