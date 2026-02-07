@@ -2,3 +2,8 @@
 **Vulnerability:** Private SSL key (`server.key`) and certificate (`server.crt`) were committed to the git repository and used by the Express server.
 **Learning:** Hardcoding paths to SSL certificates in server startup logic (`fs.readFileSync`) without checks often forces developers to commit these files or deal with startup crashes.
 **Prevention:** Implement conditional HTTPS startup that checks for file existence before attempting to read them, and always ensure `.key` and `.crt` files are in `.gitignore`. Use environment variables or secrets management for production certificates.
+
+## 2026-02-13 - Host Header Injection & CSP Hardening
+**Vulnerability:** The HTTP redirection server in `server.js` was susceptible to Host Header Injection, allowing attackers to redirect users to malicious domains. Additionally, the CSP was overly permissive with `'unsafe-inline'` in `script-src`.
+**Learning:** Redirection logic using `req.headers.host` must always be validated against a whitelist. Hardening CSP by removing `'unsafe-inline'` is a high-impact security win but requires verification that no essential frontend functionality depends on inline scripts.
+**Prevention:** Use a regex validation for the Host header before redirection. Favor external scripts over inline ones to allow for a stricter CSP without `'unsafe-inline'`.
