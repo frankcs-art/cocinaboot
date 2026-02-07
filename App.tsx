@@ -232,17 +232,21 @@ function App() {
   }, [inventory]);
 
   const addStock = useCallback((itemId: string, quantity: number, location?: string) => {
-    const item = inventory.find(i => i.id === itemId);
-    if (!item || quantity <= 0) return;
+    if (quantity <= 0) return;
 
-    setInventory(prev => prev.map(i => i.id === itemId ? {
-      ...i,
-      quantity: i.quantity + quantity,
-      location: location || i.location,
-      lastUpdated: new Date().toISOString(),
-      batchInfo: [...(i.batchInfo || []), { entryDate: new Date().toISOString(), quantity }]
-    } : i));
-  }, [inventory]);
+    setInventory(prev => {
+      const itemExists = prev.some(i => i.id === itemId);
+      if (!itemExists) return prev;
+
+      return prev.map(i => i.id === itemId ? {
+        ...i,
+        quantity: i.quantity + quantity,
+        location: location || i.location,
+        lastUpdated: new Date().toISOString(),
+        batchInfo: [...(i.batchInfo || []), { entryDate: new Date().toISOString(), quantity }]
+      } : i);
+    });
+  }, []);
 
   const deleteInventoryItem = useCallback((itemId: string) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este producto?')) {
