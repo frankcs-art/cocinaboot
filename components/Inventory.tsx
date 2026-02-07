@@ -70,7 +70,69 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
   </tr>
 ));
 
-export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, searchTerm, onRecordUsage, onAddStock, onDeleteItem, isHighDemand }) => {
+/**
+ * Optimized Inventory Card for Mobile View
+ */
+const InventoryCard: React.FC<{
+  item: InventoryItem;
+  coverage: number;
+  onSelect: (item: InventoryItem) => void;
+  onDelete: (id: string) => void
+}> = React.memo(({ item, coverage, onSelect, onDelete }) => (
+  <div className="p-5 space-y-4 hover:bg-white/2 transition-colors group active:bg-white/5" onClick={() => onSelect(item)}>
+    <div className="flex justify-between items-start">
+      <div className="flex items-center gap-3">
+        <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-lg font-black shrink-0 overflow-hidden ${CATEGORY_THEMES[item.category] || CATEGORY_THEMES.Default}`}>
+          {item.image ? (
+            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+          ) : (
+            item.name[0]
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="font-black text-white text-base leading-tight truncate">{item.name}</p>
+          <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-1">{item.category} • {item.location}</p>
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <p className="text-lg font-black text-white">{item.quantity} <span className="text-slate-500 font-medium text-xs uppercase tracking-tight">{item.unit}</span></p>
+          {coverage < 999 && <p className="text-[9px] font-bold text-slate-500 mt-1">{coverage.toFixed(1)} días</p>}
+      </div>
+    </div>
+    <div className="flex justify-between items-center">
+        {coverage < 0.5 ? (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase rounded-lg border border-rose-500/20">
+           <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div> 🔴 CRÍTICO
+        </span>
+        ) : coverage < 2 ? (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase rounded-lg border border-yellow-500/20">
+           <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> 🟡 REABASTECER
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase rounded-lg border border-emerald-500/20">
+           <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> 🟢 ÓPTIMO
+        </span>
+      )}
+       <div className="flex gap-2">
+          <button
+            className="p-2 bg-white/5 rounded-xl text-slate-400"
+            aria-label="Ver historial"
+          >
+            <History size={16}/>
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+            className="p-2 bg-rose-500/10 rounded-xl text-rose-500 active:scale-95"
+            aria-label="Eliminar producto"
+          >
+            <Trash2 size={16}/>
+          </button>
+       </div>
+    </div>
+  </div>
+));
+
+export const Inventory: React.FC<InventoryProps> = React.memo(({ inventory, coverageData, searchTerm, onRecordUsage, onAddStock, onDeleteItem, isHighDemand }) => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [usageValue, setUsageValue] = useState(1);
   const [filterCategory, setFilterCategory] = useState<string>('All');
@@ -170,57 +232,13 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
 
         <div className="md:hidden divide-y divide-white/20">
           {processedInventory.map(item => (
-            <div key={item.id} className="p-5 space-y-4 hover:bg-white/2 transition-colors group active:bg-white/5" onClick={() => setSelectedItem(item)}>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-lg font-black shrink-0 overflow-hidden ${CATEGORY_THEMES[item.category] || CATEGORY_THEMES.Default}`}>
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                    ) : (
-                      item.name[0]
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-black text-white text-base leading-tight truncate">{item.name}</p>
-                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-1">{item.category} • {item.location}</p>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-lg font-black text-white">{item.quantity} <span className="text-slate-500 font-medium text-xs uppercase tracking-tight">{item.unit}</span></p>
-                    {(coverageData[item.id]?.coverage ?? 999) < 999 && <p className="text-[9px] font-bold text-slate-500 mt-1">{(coverageData[item.id]?.coverage ?? 999).toFixed(1)} días</p>}
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                  {(coverageData[item.id]?.coverage ?? 999) < 0.5 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase rounded-lg border border-rose-500/20">
-                     <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div> 🔴 CRÍTICO
-                  </span>
-                  ) : (coverageData[item.id]?.coverage ?? 999) < 2 ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 text-[8px] font-black uppercase rounded-lg border border-yellow-500/20">
-                     <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> 🟡 REABASTECER
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase rounded-lg border border-emerald-500/20">
-                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> 🟢 ÓPTIMO
-                  </span>
-                )}
-                 <div className="flex gap-2">
-                    <button
-                      className="p-2 bg-white/5 rounded-xl text-slate-400"
-                      aria-label="Ver historial"
-                    >
-                      <History size={16}/>
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); onDeleteItem(item.id); }}
-                      className="p-2 bg-rose-500/10 rounded-xl text-rose-500 active:scale-95"
-                      aria-label="Eliminar producto"
-                    >
-                      <Trash2 size={16}/>
-                    </button>
-                 </div>
-              </div>
-            </div>
+            <InventoryCard
+              key={item.id}
+              item={item}
+              coverage={coverageData[item.id]?.coverage ?? 999}
+              onSelect={setSelectedItem}
+              onDelete={onDeleteItem}
+            />
           ))}
         </div>
       </div>
@@ -291,4 +309,4 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
       )}
     </div>
   );
-};
+});

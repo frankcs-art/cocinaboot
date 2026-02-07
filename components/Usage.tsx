@@ -8,7 +8,7 @@ interface UsageProps {
   onRecordUsage: (id: string, q: number, type: 'Consumo' | 'Merma') => void;
 }
 
-export const Usage: React.FC<UsageProps> = ({ usage, inventory, onRecordUsage }) => {
+export const Usage: React.FC<UsageProps> = React.memo(({ usage, inventory, onRecordUsage }) => {
   const [selectedItem, setSelectedItem] = useState('');
   const [q, setQ] = useState(1);
   const [type, setType] = useState<'Consumo' | 'Merma'>('Consumo');
@@ -122,4 +122,4 @@ export const Usage: React.FC<UsageProps> = ({ usage, inventory, onRecordUsage })
       </div>
     </div>
   );
-};
+});
