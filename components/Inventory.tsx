@@ -119,6 +119,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
               <div className="flex items-center gap-2 bg-white/5 px-3 md:px-4 py-2.5 rounded-xl border border-white/20">
                 <Filter size={14} className="text-slate-500 shrink-0" />
                 <select 
+                  aria-label="Filtrar por categoría"
                   className="bg-transparent text-slate-300 text-[10px] md:text-xs font-bold outline-none cursor-pointer w-full"
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
@@ -130,6 +131,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
               <div className="flex items-center gap-2 bg-white/5 px-3 md:px-4 py-2.5 rounded-xl border border-white/20">
                 <ArrowUpDown size={14} className="text-slate-500 shrink-0" />
                 <select 
+                  aria-label="Ordenar por"
                   className="bg-transparent text-slate-300 text-[10px] md:text-xs font-bold outline-none cursor-pointer w-full"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
@@ -253,7 +255,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
                   </div>
                </div>
                <div className="space-y-3">
-                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 flex justify-between items-center">
+                 <label htmlFor="usage-quantity" className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 flex justify-between items-center">
                     <span>Cantidad a descontar ({selectedItem.unit})</span>
                  </label>
                  <div className="flex items-center gap-4">
@@ -265,6 +267,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
                       <Minus size={20} />
                     </button>
                     <input 
+                      id="usage-quantity"
                       type="number" 
                       className="flex-1 bg-white/5 border border-white/20 px-4 py-3 rounded-xl text-center text-2xl font-black text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                       value={usageValue}

@@ -34,6 +34,7 @@ export const Chat: React.FC<ChatProps> = ({ messages, onSend, isLoading, isThink
            <button 
              onClick={() => onSend("Sugiéreme una receta para menú hoy basada en mi stock actual")}
              className="px-3 md:px-5 py-2 md:py-3 bg-white/5 hover:bg-white/10 text-[9px] md:text-xs font-black rounded-lg md:rounded-2xl border border-white/10 text-slate-400 hover:text-white transition-all flex items-center gap-2"
+             aria-label="Sugerir receta basada en stock"
            >
              <ChefHat size={14}/> <span className="hidden sm:inline">Receta Sugerida</span><span className="sm:hidden">Receta</span>
            </button>
@@ -81,6 +82,7 @@ export const Chat: React.FC<ChatProps> = ({ messages, onSend, isLoading, isThink
       <form onSubmit={(e) => { e.preventDefault(); if(input.trim() && !isLoading) { onSend(input); setInput(''); } }} className="p-4 md:p-10 bg-black/40 border-t border-white/5 flex gap-3 md:gap-6">
         <input 
           type="text" 
+          aria-label="Escribe tu mensaje para la IA"
           placeholder="Escribe un mensaje..."
           className="flex-1 bg-white/5 border border-white/10 rounded-xl md:rounded-3xl px-4 md:px-8 py-3 md:py-5 outline-none font-bold text-sm md:text-lg focus:ring-2 focus:ring-emerald-500/20 text-slate-200 placeholder:text-slate-700 transition-all" 
           value={input} 

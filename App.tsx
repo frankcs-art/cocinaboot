@@ -374,7 +374,7 @@ function App() {
             <button
               onClick={() => setActiveTab('notifications')}
               className={`p-2.5 md:p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all relative ${activeTab === 'notifications' ? 'border-emerald-500/50 bg-emerald-500/5 text-emerald-400' : ''}`}
-              aria-label="Notificaciones"
+              aria-label={`Notificaciones${stats.unreadNotifications > 0 ? `, ${stats.unreadNotifications} sin leer` : ''}`}
             >
               <Bell size={20} />
               {stats.unreadNotifications > 0 && (
