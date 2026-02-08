@@ -19,7 +19,7 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "script-src": ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://apis.google.com"],
+            "script-src": ["'self'", "https://cdn.tailwindcss.com", "https://apis.google.com"],
             "img-src": ["'self'", "data:", "https:*"],
             "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             "font-src": ["'self'", "https://fonts.gstatic.com"],
@@ -67,6 +67,14 @@ if (hasCertificates) {
     // Start HTTP Server (Redirect to HTTPS)
     http.createServer((req, res) => {
         const host = req.headers.host ? req.headers.host.split(':')[0] : 'localhost';
+
+        // Host Header Injection Protection: Validate host against allowed characters
+        if (!/^[a-zA-Z0-9.-]+$/.test(host)) {
+            res.writeHead(400);
+            res.end('Invalid Host header');
+            return;
+        }
+
         res.writeHead(301, { "Location": `https://${host}:${PORT}${req.url}` });
         res.end();
     }).listen(HTTP_PORT, () => {
@@ -81,6 +89,14 @@ if (hasCertificates) {
     // Optional: Still run redirection server if needed, but point to HTTP
     http.createServer((req, res) => {
         const host = req.headers.host ? req.headers.host.split(':')[0] : 'localhost';
+
+        // Host Header Injection Protection: Validate host against allowed characters
+        if (!/^[a-zA-Z0-9.-]+$/.test(host)) {
+            res.writeHead(400);
+            res.end('Invalid Host header');
+            return;
+        }
+
         res.writeHead(301, { "Location": `http://${host}:${PORT}${req.url}` });
         res.end();
     }).listen(HTTP_PORT, () => {
