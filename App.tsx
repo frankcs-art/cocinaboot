@@ -49,29 +49,30 @@ function App() {
     unreadNotifications: notifications.filter(n => !n.isRead).length
   }), [inventory, notifications]);
 
-  // Optimized Coverage Calculation - O(N + M)
+  // Optimized Coverage Calculation - O(N + M) with single-pass aggregation
   const coverageData = useMemo(() => {
-    // Group usage by itemId first - O(M)
-    const usageByItem = usage.reduce((acc, u) => {
+    // Single pass to aggregate total consumed and unique days per item - O(M)
+    // This avoids creating multiple intermediate arrays and redundant loops
+    const usageStats = usage.reduce((acc, u) => {
       if (u.type === 'Consumo') {
-        if (!acc[u.itemId]) acc[u.itemId] = [];
-        acc[u.itemId].push(u);
+        if (!acc[u.itemId]) acc[u.itemId] = { total: 0, days: new Set<string>() };
+        acc[u.itemId].total += u.quantityConsumed;
+        acc[u.itemId].days.add(u.date);
       }
       return acc;
-    }, {} as Record<string, UsageHistory[]>);
+    }, {} as Record<string, { total: number; days: Set<string> }>);
 
     const data: Record<string, { cpd: number; coverage: number }> = {};
 
-    // Calculate for each inventory item - O(N)
+    // Finalize calculation for each inventory item - O(N)
     inventory.forEach(item => {
-      const itemUsage = usageByItem[item.id] || [];
-      if (itemUsage.length === 0) {
+      const stats = usageStats[item.id];
+      if (!stats) {
         data[item.id] = { cpd: 0, coverage: 999 };
         return;
       }
-      const uniqueDays = new Set(itemUsage.map(u => u.date)).size;
-      const totalConsumed = itemUsage.reduce((acc, u) => acc + u.quantityConsumed, 0);
-      let cpd = uniqueDays > 0 ? totalConsumed / uniqueDays : totalConsumed;
+      const uniqueDays = stats.days.size;
+      let cpd = uniqueDays > 0 ? stats.total / uniqueDays : stats.total;
 
       // High Demand Adjustment: +30% CPD for perishables
       if (isHighDemand && item.isPerishable) {
@@ -295,16 +296,16 @@ function App() {
     setAiSuggestion(null);
   };
 
-  const handleTabChange = (tab: any) => {
+  const handleTabChange = useCallback((tab: any) => {
     setActiveTab(tab);
     setIsMobileMenuOpen(false);
-  };
+  }, []);
 
-  const handleVoiceCommand = (command: string, transcript: string) => {
+  const handleVoiceCommand = useCallback((command: string, transcript: string) => {
     if (command) {
       setActiveTab(command as any);
     }
-  };
+  }, []);
 
   const isOnline = useOnlineStatus();
 

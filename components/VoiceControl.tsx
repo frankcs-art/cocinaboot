@@ -6,7 +6,7 @@ interface VoiceControlProps {
   onCommand: (command: string, transcript: string) => void;
 }
 
-export const VoiceControl: React.FC<VoiceControlProps> = ({ onCommand }) => {
+export const VoiceControl: React.FC<VoiceControlProps> = React.memo(({ onCommand }) => {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const recognitionRef = useRef<any>(null);
@@ -113,4 +113,4 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({ onCommand }) => {
       )}
     </div>
   );
-};
+});

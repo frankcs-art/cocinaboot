@@ -18,7 +18,7 @@ const NavItem: React.FC<{ active: boolean; onClick: () => void; icon: React.Reac
   </button>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, user, onLogout }) => {
+export const Sidebar: React.FC<SidebarProps> = React.memo(({ activeTab, onTabChange, user, onLogout }) => {
   return (
     <>
       <div className="p-6 md:p-8">
@@ -72,4 +72,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, user, 
       </div>
     </>
   );
-};
+});
