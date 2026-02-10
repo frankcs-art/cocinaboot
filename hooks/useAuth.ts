@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, signInWithGoogle, logout, isFirebaseConfigured } from '../firebase';
 import Logger from '../logger';
@@ -19,7 +19,7 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  const handleLogin = async () => {
+  const handleLogin = useCallback(async () => {
     try {
       const result = await signInWithGoogle();
       
@@ -38,16 +38,16 @@ export function useAuth() {
       Logger.error('Login failed', error);
       throw error;
     }
-  };
+  }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await logout();
       Logger.info('User logged out');
     } catch (error) {
       Logger.error('Logout failed', error);
     }
-  };
+  }, []);
 
   return { user, loading, login: handleLogin, logout: handleLogout };
 }

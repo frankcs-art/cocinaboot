@@ -1,9 +1,13 @@
 import { InventoryItem, UsageHistory } from "./types";
 
 export class GeminiService {
+  private static client: any = null;
+
   private static async getClient() {
+    if (this.client) return this.client;
     const { GoogleGenAI } = await import("@google/genai");
-    return new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string });
+    this.client = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string });
+    return this.client;
   }
 
   static async chatWithInventory(
