@@ -5,3 +5,7 @@
 ## 2026-02-05 - [Search UX & Keyboard Accessibility]
 **Learning:** Implementing a "Clear" button in search inputs requires not just visual feedback but also keyboard focus management. Removing the button from the DOM after clearing causes a "lost focus" state for keyboard users unless focus is programmatically returned to the input field.
 **Action:** Always use `useRef` to return focus to the input after a destructive or clearing action on an associated button, and ensure the button has `type="button"` to avoid form side effects.
+
+## 2026-02-05 - [Accessibility Polishing for Interactive Elements]
+**Learning:** Dynamic components like voice control toggles and chat inputs often miss essential ARIA attributes during rapid development. Specifically, icon-only buttons need `aria-label` and `aria-pressed` to communicate state, while message inputs require explicit labels for screen readers. Misleading ARIA labels (e.g., "View history" on a button that opens a "Record consumption" modal) can confuse users.
+**Action:** Regularly audit interactive components for missing or misleading ARIA attributes. Ensure stateful buttons use dynamic `aria-label` and correct state attributes like `aria-pressed`.

@@ -89,6 +89,8 @@ export const VoiceControl: React.FC<VoiceControlProps> = React.memo(({ onCommand
     <div className="fixed bottom-6 right-6 z-50">
       <button
         onClick={toggleListening}
+        aria-label={isListening ? "Detener reconocimiento de voz" : "Iniciar reconocimiento de voz"}
+        aria-pressed={isListening}
         className={`w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.5)] transition-all duration-300 ${
           isListening 
             ? 'bg-rose-500 text-white animate-pulse shadow-[0_0_50px_rgba(244,63,94,0.5)] scale-110' 

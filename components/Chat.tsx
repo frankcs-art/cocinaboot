@@ -82,6 +82,7 @@ export const Chat: React.FC<ChatProps> = ({ messages, onSend, isLoading, isThink
         <input 
           type="text" 
           placeholder="Escribe un mensaje..."
+          aria-label="Mensaje para el asistente IA"
           className="flex-1 bg-white/5 border border-white/10 rounded-xl md:rounded-3xl px-4 md:px-8 py-3 md:py-5 outline-none font-bold text-sm md:text-lg focus:ring-2 focus:ring-emerald-500/20 text-slate-200 placeholder:text-slate-700 transition-all" 
           value={input} 
           onChange={(e) => setInput(e.target.value)} 

@@ -55,7 +55,7 @@ const InventoryRow: React.FC<{ item: InventoryItem; coverage: number; onSelect: 
       <button 
         onClick={() => onSelect(item)}
         className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all mr-3"
-        aria-label="Ver historial de uso"
+        aria-label="Registrar consumo"
       >
         <Clock size={18} />
       </button>
@@ -253,7 +253,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
                   </div>
                </div>
                <div className="space-y-3">
-                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 flex justify-between items-center">
+                 <label htmlFor="usage-quantity" className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 flex justify-between items-center">
                     <span>Cantidad a descontar ({selectedItem.unit})</span>
                  </label>
                  <div className="flex items-center gap-4">
@@ -265,6 +265,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, coverageData, s
                       <Minus size={20} />
                     </button>
                     <input 
+                      id="usage-quantity"
                       type="number" 
                       className="flex-1 bg-white/5 border border-white/20 px-4 py-3 rounded-xl text-center text-2xl font-black text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                       value={usageValue}
