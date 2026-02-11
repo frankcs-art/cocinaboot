@@ -6,6 +6,7 @@ import spdy from 'spdy';
 import fs from 'fs';
 import http from 'http';
 import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,16 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HTTP_PORT = 8080; // Port for HTTP redirection
+
+// Rate Limiting: Protect from DoS by limiting requests per IP
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per `window`
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use(limiter);
 
 // Security Headers with Helmet
 app.use(helmet({
@@ -25,8 +36,10 @@ app.use(helmet({
             "font-src": ["'self'", "https://fonts.gstatic.com"],
             "connect-src": ["'self'", "https://*.googleapis.com", "https://*.firebaseio.com", "https://*.google-analytics.com", "https://*.firebaseapp.com"],
             "frame-src": ["'self'", "https://*.firebaseapp.com"],
+            "upgrade-insecure-requests": [],
         },
     },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
 }));
 
 // Enable Gzip/Brotli compression
@@ -41,6 +54,12 @@ app.use(express.static(path.join(__dirname, 'dist'), {
 // SPA Fallback
 app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+// Generic Error Handler: Prevent sensitive data leaks
+app.use((err, req, res, next) => {
+    console.error(`[ERROR] ${err.stack}`);
+    res.status(500).send('Internal Server Error');
 });
 
 // SSL Paths
@@ -68,12 +87,15 @@ if (hasCertificates) {
     http.createServer((req, res) => {
         const host = req.headers.host ? req.headers.host.split(':')[0] : 'localhost';
         // SECURITY: Validate Host header to prevent Host Header Injection.
-        // We whitelist alphanumeric, dots and dashes. For production, consider a domain whitelist.
-        const isValidHost = /^[a-zA-Z0-9.-]+$/.test(host);
+        // In production, consider a strict whitelist of your domains.
+        const isValidHost = host && /^[a-zA-Z0-9.-]+$/.test(host);
         const safeHost = isValidHost ? host : 'localhost';
-        // SECURITY: Ensure req.url starts with / to prevent open redirects via malformed URLs.
-        const safeUrl = (req.url && req.url.startsWith('/')) ? req.url : '/';
-        res.writeHead(301, { "Location": `https://${safeHost}:${PORT}${safeUrl}` });
+
+        // SECURITY: Strict URL validation to prevent open redirects via protocol-relative URLs (e.g., //evil.com).
+        const safeUrl = (req.url && req.url.startsWith('/') && !req.url.startsWith('//')) ? req.url : '/';
+
+        console.log(`[SECURITY] Redirecting to https://${safeHost}:${PORT}${safeUrl} (Original Host: ${req.headers.host})`);
+        res.writeHead(307, { "Location": `https://${safeHost}:${PORT}${safeUrl}` });
         res.end();
     }).listen(HTTP_PORT, () => {
         console.log(`➡️  HTTP Redirect running at http://localhost:${HTTP_PORT}`);
@@ -87,12 +109,15 @@ if (hasCertificates) {
     // Optional: Still run redirection server if needed, but point to HTTP
     http.createServer((req, res) => {
         const host = req.headers.host ? req.headers.host.split(':')[0] : 'localhost';
-        // SECURITY: Validate Host header to prevent Host Header Injection
-        const isValidHost = /^[a-zA-Z0-9.-]+$/.test(host);
+        // SECURITY: Validate Host header.
+        const isValidHost = host && /^[a-zA-Z0-9.-]+$/.test(host);
         const safeHost = isValidHost ? host : 'localhost';
-        // SECURITY: Ensure req.url starts with / to prevent open redirects
-        const safeUrl = (req.url && req.url.startsWith('/')) ? req.url : '/';
-        res.writeHead(301, { "Location": `http://${safeHost}:${PORT}${safeUrl}` });
+
+        // SECURITY: Open redirect prevention.
+        const safeUrl = (req.url && req.url.startsWith('/') && !req.url.startsWith('//')) ? req.url : '/';
+
+        console.log(`[SECURITY] Redirecting to http://${safeHost}:${PORT}${safeUrl} (Original Host: ${req.headers.host})`);
+        res.writeHead(307, { "Location": `http://${safeHost}:${PORT}${safeUrl}` });
         res.end();
     }).listen(HTTP_PORT, () => {
         console.log(`➡️  HTTP Redirect running at http://localhost:${HTTP_PORT} (Redirecting to HTTP)`);
